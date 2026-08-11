@@ -4,7 +4,8 @@ development:
     # Defines the default client. (required)
     default:
       # Mongoid can connect to a URI accepted by the driver:
-      uri: mongodb://127.0.0.1:27017/?directConnection=true
+      #uri: mongodb://127.0.0.1:27017/?directConnection=true
+      uri: <%= ENV.fetch("MONGODB_URI") { "mongodb://127.0.0.1:27017/software_arch_team4_development?directConnection=true" } %>
 
       # Otherwise define the parameters separately.
       # This defines the name of the default database that Mongoid can connect to.

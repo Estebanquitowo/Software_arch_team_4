@@ -1,0 +1,30 @@
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: software_arch_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: software_arch_team4_development
+
+  web:
+    build: . # uses default Rails Dockerfile
+    container_name: software_arch_web
+    command: bin/rails server -b 0.0.0.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/rails
+      - bundle_data:/usr/local/bundle
+    environment:
+      RAILS_ENV: development
+      MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:
+  bundle_data:
