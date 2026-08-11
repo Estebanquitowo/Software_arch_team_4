@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  date_of_birth: 2026-08-11
+  country_of_origin: MyString
+  short_description: MyText
+
+two:
+  name: MyString
+  date_of_birth: 2026-08-11
+  country_of_origin: MyString
+  short_description: MyText
