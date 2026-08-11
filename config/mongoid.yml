@@ -361,9 +361,7 @@ development:
 test:
   clients:
     default:
-      database: software_arch_team4_test
-      hosts:
-        - localhost:27017
+      uri: <%= ENV.fetch("MONGODB_TEST_URI") { "mongodb://127.0.0.1:27017/software_arch_team4_test?directConnection=true" } %>
       options:
         read:
           mode: :primary

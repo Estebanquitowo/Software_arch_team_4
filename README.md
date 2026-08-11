@@ -56,6 +56,12 @@ docker compose exec web bin/rails c
 docker compose exec web bin/rails g scaffold Book title:string summary:text # remaining fields...
 ```
 
+### Tests
+```sh
+# Run the test suite (connects to the test database in the mongodb container)
+docker compose exec web bin/rails test
+```
+
 ### Viewing Logs
 ```sh
 # View live web application logs

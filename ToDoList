@@ -1,0 +1,17 @@
+[X] make the rails and mongoDB conection
+[X] CRUD backend for authors
+[] CRUD backend for books
+[] CRUD backend for Reviews
+[] Populate the database with 50 authors, 300 books,
+1 to 10 reviews for each book, At least 5 years of sales per book
+[] table that shows authors, number of published books, average
+score and total sales. This table should have a sort and filter for
+each column.
+[] A table that shows the top 10 rated books of all time, with their
+highest-rated and lowest-rated review
+[] A table that shows the top 50 selling books of all time, showing
+their total sales for the book, total sales for the author, and if the
+book was in the top 5 selling books in the year of its publication.
+[] A search window, that lets me input text, and returns a
+paginated list of books whose summary contains any of the
+words in the search.

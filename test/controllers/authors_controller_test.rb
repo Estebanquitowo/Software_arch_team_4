@@ -2,7 +2,9 @@ require "test_helper"
 
 class AuthorsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @author = authors(:one)
+    Author.delete_all
+    @author = Author.create!(name: "Jane Doe", country_of_origin: "UK",
+                             date_of_birth: Date.new(1980, 1, 1), short_description: "Writer")
   end
 
   test "should get index" do
