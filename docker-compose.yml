@@ -23,6 +23,7 @@ services:
       RAILS_ENV: development
       MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
       MONGODB_TEST_URI: mongodb://mongodb:27017/software_arch_team4_test
+      HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN:-}
     depends_on:
       - mongodb
 

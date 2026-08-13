@@ -2,6 +2,7 @@ require "test_helper"
 
 class AuthorsControllerTest < ActionDispatch::IntegrationTest
   setup do
+    Book.delete_all
     Author.delete_all
     @author = Author.create!(name: "Jane Doe", country_of_origin: "UK",
                              date_of_birth: Date.new(1980, 1, 1), short_description: "Writer")
@@ -10,6 +11,17 @@ class AuthorsControllerTest < ActionDispatch::IntegrationTest
   test "should get index" do
     get authors_url
     assert_response :success
+  end
+
+  test "returns authors and their books as JSON" do
+    Book.create!(title: "Test Book", summary: "A summary.", author: @author)
+
+    get authors_url(format: :json)
+
+    assert_response :success
+    author = JSON.parse(response.body).find { |item| item["id"] == @author.id.to_s }
+    assert_equal "Jane Doe", author["name"]
+    assert_equal [ "Test Book" ], author["books"].pluck("title")
   end
 
   test "should get new" do

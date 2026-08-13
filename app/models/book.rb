@@ -11,6 +11,7 @@ class Book
   field :publication_date, type: Date
   field :publication_year, type: Integer
   field :avg_score, type: Float
+  field :number_of_sales, type: Integer, default: 0
 
   index({ summary: "text" }, background: true)
   index({ publication_date: 1 }, background: true)

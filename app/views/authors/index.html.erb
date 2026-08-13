@@ -1,16 +1,16 @@
-<p style="color: green"><%= notice %></p>
+<% content_for :title, "Database check" %>
 
-<% content_for :title, "Authors" %>
+<main data-controller="database-check" data-database-check-authors-url-value="<%= authors_path(format: :json) %>">
+  <h1>Database check</h1>
 
-<h1>Authors</h1>
+  <p data-database-check-target="status">Loading data...</p>
 
-<div id="authors">
-  <% @authors.each do |author| %>
-    <%= render author %>
-    <p>
-      <%= link_to "Show this author", author %>
-    </p>
-  <% end %>
-</div>
+  <section data-database-check-target="results" hidden>
+    <p>Authors: <span data-database-check-target="authorCount">0</span></p>
+    <p>Books: <span data-database-check-target="bookCount">0</span></p>
 
-<%= link_to "New author", new_author_path %>
+    <hr>
+
+    <div data-database-check-target="authors"></div>
+  </section>
+</main>

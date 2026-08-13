@@ -58,3 +58,8 @@ group :test do
 end
 
 gem "mongoid", "~> 9.1"
+
+# Loads local environment variables (including HARDCOVER_API_TOKEN) when Rails
+# commands are run outside Docker as well.
+gem "dotenv", require: "dotenv/load"
+gem "faker"
