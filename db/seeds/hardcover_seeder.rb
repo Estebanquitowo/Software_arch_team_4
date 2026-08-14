@@ -7,6 +7,8 @@ class HardcoverSeeder
   PAGE_SIZE = 100
   MAX_PAGES = 50
   PLACEHOLDER_AUTHOR_NAMES = [ "unknown" ].freeze
+  MIN_AUTHOR_AGE = 18
+  MAX_AUTHOR_AGE = 75
 
   def self.call
     candidates = {}
@@ -59,6 +61,8 @@ class HardcoverSeeder
             id
             title
             description
+            release_date
+            release_year
           }
         }
       }
@@ -138,6 +142,8 @@ class HardcoverSeeder
         Book.create!(
           title: book_data[:title],
           summary: book_data[:summary],
+          publication_date: book_data[:publication_date],
+          publication_year: book_data[:publication_year],
           author: author
         )
       end
@@ -149,22 +155,30 @@ class HardcoverSeeder
     name = text(author_data&.fetch("name", nil))
     return if source_id.nil? || name.nil? || placeholder_author_name?(name)
 
-    {
+    with_fallback_author_details(
       source_id: source_id,
       name: name,
       date_of_birth: parse_date(author_data["born_date"]),
       country_of_origin: text(author_data["location"]),
       short_description: text(author_data["bio"])
-    }
+    )
   end
 
   def self.valid_book(book_data)
     id = text(book_data&.fetch("id", nil))
     title = text(book_data&.fetch("title", nil))
     summary = text(book_data&.fetch("description", nil))
-    return if id.nil? || title.nil? || summary.nil?
+    publication_date = parse_date(book_data&.fetch("release_date", nil))
+    publication_year = parse_year(book_data&.fetch("release_year", nil)) || publication_date&.year
+    return if id.nil? || title.nil? || summary.nil? || publication_year.nil?
 
-    { id: id, title: title, summary: summary }
+    {
+      id: id,
+      title: title,
+      summary: summary,
+      publication_date: publication_date,
+      publication_year: publication_year
+    }
   end
 
   def self.text(value)
@@ -179,5 +193,20 @@ class HardcoverSeeder
     Date.iso8601(value.to_s)
   rescue ArgumentError
     nil
+  end
+
+  def self.parse_year(value)
+    year = Integer(value)
+    year if year.positive?
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  def self.with_fallback_author_details(attributes)
+    attributes.merge(
+      date_of_birth: attributes[:date_of_birth] || Faker::Date.birthday(min_age: MIN_AUTHOR_AGE, max_age: MAX_AUTHOR_AGE),
+      country_of_origin: attributes[:country_of_origin] || Faker::Address.country,
+      short_description: attributes[:short_description] || Faker::Lorem.paragraph(sentence_count: 2)
+    )
   end
 end

@@ -1,0 +1,68 @@
+<% content_for :title, "MongoDB debug" %>
+
+<main>
+  <h1>MongoDB debug</h1>
+
+  <p>Authors: <%= @authors.size %></p>
+  <p>Books: <%= @books.size %></p>
+
+  <h2>Authors</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Country</th>
+        <th>Date of birth</th>
+        <th>Books</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @authors.each do |author| %>
+        <tr>
+          <td><%= author.name %></td>
+          <td><%= author.country_of_origin.presence || "—" %></td>
+          <td><%= author.date_of_birth || "—" %></td>
+          <td><%= @books_by_author_id.fetch(author.id, []).size %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h2>Books</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Publication date</th>
+        <th>Avg score</th>
+        <th>Total sales</th>
+        <th>Reviews</th>
+        <th>Review sample</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @books.each do |book| %>
+        <% review = book.reviews.first %>
+        <tr>
+          <td><%= book.title %></td>
+          <td><%= @authors_by_id[book.author_id]&.name || "—" %></td>
+          <td><%= book.publication_date || book.publication_year || "—" %></td>
+          <td><%= book.avg_score ? format("%.2f", book.avg_score) : "—" %></td>
+          <td><%= book.number_of_sales %></td>
+          <td><%= book.reviews.count %></td>
+          <td>
+            <% if review %>
+              <strong><%= review.title %></strong> (<%= review.rating %>/5):
+              <%= truncate(review.content, length: 140) %>
+            <% else %>
+              —
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</main>
