@@ -34,13 +34,25 @@ Book review web application built with:
     docker compose ps
     ```
 
+1. If running the app for the first time, populate it with:
+    ```sh
+    docker compose exec web bin/rails db:seed
+    ```
+
+    In order of populating the database, `seeds.rb` uses a [Hardcover.app](https://hardcover.app) API token. To obtain one:
+    
+    1. Create a Hardcover account.
+    1. Go to the [account](https://hardcover.app/account/api) section inside the site.
+    1. Copy the text block starting with the `'Bearer'` line, without including it.
+    1. Paste it as a value for the `HARDCOVER_API_TOKEN` key inside `.env.example`.
+
 ## Workflow & Development Commands
 
 Development can be done inside the Docker Containers. Effects of Rails and database commands ran inside them should persist even after containers are down. Commands ran this way must be prefixed with the `docker compose exec` string, as in all following examples.
 
 ### Database & Seeding
 ```sh
-# Populate database with seed data (there's none yet)
+# Populate database with seed data
 docker compose exec web bin/rails db:seed
 
 # KEY DEBUGGING COMMAND: Access interactive MongoDB shell (mongosh)
