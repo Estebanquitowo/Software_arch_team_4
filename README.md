@@ -43,8 +43,8 @@ Book review web application built with:
     
     1. Create a Hardcover account.
     1. Go to the [account](https://hardcover.app/account/api) section inside the site.
-    1. Copy the text block starting with the `'Bearer'` line, without including it.
-    1. Paste it as a value for the `HARDCOVER_API_TOKEN` key inside `.env.example`.
+    1. Copy the text block starting with the `'Bearer'` line, without including it; this is the API token.
+    1. Copy `.env.example`, paste it on root, rename it to `.env`, and paste the API token as the value for the `HARDCOVER_API_TOKEN` key.
 
 ## Workflow & Development Commands
 
