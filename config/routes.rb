@@ -2,7 +2,16 @@ Rails.application.routes.draw do
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   resources :authors
 
-  # Set authors index as the home page
+  resources :books do
+    resources :reviews, except: [ :show ]
+  end
+
+  get "reports/authors_summary", to: "reports#authors_summary"
+  get "reports/top_rated_books", to: "reports#top_rated_books"
+  get "reports/top_selling_books", to: "reports#top_selling_books"
+
+  get "search", to: "search#index"
+
   root "authors#index"
 
   get "debug", to: "debug#show"

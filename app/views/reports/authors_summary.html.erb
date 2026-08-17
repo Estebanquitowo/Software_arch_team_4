@@ -1,0 +1,50 @@
+<% content_for :title, "Authors Summary" %>
+
+<h1>Authors Summary</h1>
+
+<form method="get" action="<%= reports_authors_summary_path %>">
+  <label for="country">Filter by country:</label>
+  <select name="country" id="country">
+    <option value="">All countries</option>
+    <% @countries.each do |country| %>
+      <option value="<%= country %>" <%= "selected" if @country_filter == country %>><%= country %></option>
+    <% end %>
+  </select>
+  <input type="hidden" name="sort" value="<%= @sort_column %>">
+  <input type="hidden" name="dir" value="<%= @sort_direction %>">
+  <button type="submit">Filter</button>
+</form>
+
+<br>
+
+<table>
+  <thead>
+    <tr>
+      <% { "name" => "Name", "books_count" => "Published Books", "avg_score" => "Avg Score", "total_sales" => "Total Sales" }.each do |col, label| %>
+        <th>
+          <%= link_to label, reports_authors_summary_path(sort: col, dir: @sort_column == col && @sort_direction == "asc" ? "desc" : "asc", country: @country_filter) %>
+          <% if @sort_column == col %>
+            (<%= @sort_direction == "asc" ? "▲" : "▼" %>)
+          <% end %>
+        </th>
+      <% end %>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @authors_summary.each do |author| %>
+      <tr>
+        <td><%= author["name"] %></td>
+        <td><%= author["books_count"] %></td>
+        <td><%= author["avg_score"] ? author["avg_score"].round(2) : "N/A" %></td>
+        <td><%= author["total_sales"] || 0 %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<div>
+  <%= link_to "Back to Authors", authors_path %>
+</div>

@@ -1,0 +1,51 @@
+<% content_for :title, "Top 10 Rated Books" %>
+
+<h1>Top 10 Rated Books</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Avg Score</th>
+      <th>Highest Rated Review</th>
+      <th>Lowest Rated Review</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @book_details.each_with_index do |detail, index| %>
+      <tr>
+        <td><%= index + 1 %></td>
+        <td><%= detail[:book].title %></td>
+        <td><%= detail[:author_name] %></td>
+        <td><%= detail[:book].avg_score&.round(2) %></td>
+        <td>
+          <% if detail[:highest_review] %>
+            <strong><%= detail[:highest_review].rating %>/5</strong> –
+            "<%= detail[:highest_review].title %>"
+            by <%= detail[:highest_review].reviewer_name %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td>
+          <% if detail[:lowest_review] %>
+            <strong><%= detail[:lowest_review].rating %>/5</strong> –
+            "<%= detail[:lowest_review].title %>"
+            by <%= detail[:lowest_review].reviewer_name %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<div>
+  <%= link_to "Back to Authors", authors_path %>
+</div>

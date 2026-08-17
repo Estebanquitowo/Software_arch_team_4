@@ -1,0 +1,36 @@
+<div id="<%= dom_id book %>">
+  <div>
+    <strong>Title:</strong>
+    <%= book.title %>
+  </div>
+
+  <div>
+    <strong>Summary:</strong>
+    <%= book.summary %>
+  </div>
+
+  <div>
+    <strong>Publication date:</strong>
+    <%= book.publication_date %>
+  </div>
+
+  <div>
+    <strong>Publication year:</strong>
+    <%= book.publication_year %>
+  </div>
+
+  <div>
+    <strong>Author:</strong>
+    <%= book.author&.name %>
+  </div>
+
+  <div>
+    <strong>Avg score:</strong>
+    <%= book.avg_score %>
+  </div>
+
+  <div>
+    <strong>Total sales:</strong>
+    <%= book.number_of_sales %>
+  </div>
+</div>

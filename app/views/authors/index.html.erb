@@ -1,16 +1,13 @@
-<% content_for :title, "Database check" %>
+<% content_for :title, "Home" %>
 
-<main data-controller="database-check" data-database-check-authors-url-value="<%= authors_path(format: :json) %>">
-  <h1>Database check</h1>
+<h1>Software Arch Team 4</h1>
 
-  <p data-database-check-target="status">Loading data...</p>
-
-  <section data-database-check-target="results" hidden>
-    <p>Authors: <span data-database-check-target="authorCount">0</span></p>
-    <p>Books: <span data-database-check-target="bookCount">0</span></p>
-
-    <hr>
-
-    <div data-database-check-target="authors"></div>
-  </section>
-</main>
+<h2>Navigation</h2>
+<ul>
+  <li><%= link_to "Authors", authors_path %></li>
+  <li><%= link_to "Books", books_path %></li>
+  <li><%= link_to "Authors Summary (with sort & filter)", reports_authors_summary_path %></li>
+  <li><%= link_to "Top 10 Rated Books", reports_top_rated_books_path %></li>
+  <li><%= link_to "Top 50 Selling Books", reports_top_selling_books_path %></li>
+  <li><%= link_to "Search Books", search_path %></li>
+</ul>

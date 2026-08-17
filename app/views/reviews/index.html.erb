@@ -1,0 +1,33 @@
+<% content_for :title, "Reviews" %>
+
+<h1>Reviews for <%= @book.title %></h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rating</th>
+      <th>Title</th>
+      <th>Content</th>
+      <th>Reviewer</th>
+      <th colspan="2"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @reviews.each do |review| %>
+      <tr>
+        <td><%= review.rating %></td>
+        <td><%= review.title %></td>
+        <td><%= review.content %></td>
+        <td><%= review.reviewer_name %></td>
+        <td><%= link_to "Edit", edit_book_review_path(@book, review) %></td>
+        <td><%= button_to "Destroy", book_review_path(@book, review), method: :delete %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to "New review", new_book_review_path(@book) %> |
+<%= link_to "Back to book", @book %>

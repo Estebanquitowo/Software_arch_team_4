@@ -1,0 +1,35 @@
+<% content_for :title, "Top 50 Selling Books" %>
+
+<h1>Top 50 Selling Books of All Time</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Total Sales (Book)</th>
+      <th>Total Sales (Author)</th>
+      <th>Top 5 in Year</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @selling_books.each_with_index do |detail, index| %>
+      <tr>
+        <td><%= index + 1 %></td>
+        <td><%= detail[:book].title %></td>
+        <td><%= detail[:author_name] %></td>
+        <td><%= number_with_delimiter(detail[:book_sales]) %></td>
+        <td><%= number_with_delimiter(detail[:author_sales]) %></td>
+        <td><%= detail[:top5_in_year] ? "Yes" : "No" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<div>
+  <%= link_to "Back to Authors", authors_path %>
+</div>

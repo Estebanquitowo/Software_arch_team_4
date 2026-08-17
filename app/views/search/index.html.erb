@@ -1,0 +1,64 @@
+<% content_for :title, "Search Books" %>
+
+<h1>Search Books</h1>
+
+<form method="get" action="<%= search_path %>">
+  <input type="text" name="q" value="<%= @query %>" placeholder="Search by summary...">
+  <button type="submit">Search</button>
+</form>
+
+<br>
+
+<% if @query.present? %>
+  <p>Showing <%= @books.size %> of <%= @total %> results for "<%= @query %>" (page <%= @page %> of <%= @total_pages %>)</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Publication Year</th>
+        <th>Avg Score</th>
+        <th>Summary</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @books.each do |book| %>
+        <tr>
+          <td><%= book.title %></td>
+          <td><%= book.author&.name %></td>
+          <td><%= book.publication_year %></td>
+          <td><%= book.avg_score&.round(2) %></td>
+          <td><%= truncate(book.summary, length: 150) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if @total_pages > 1 %>
+    <nav>
+      <% if @page > 1 %>
+        <%= link_to "← Previous", search_path(q: @query, page: @page - 1) %>
+      <% end %>
+
+      <% (1..@total_pages).each do |p| %>
+        <% if p == @page %>
+          <strong><%= p %></strong>
+        <% else %>
+          <%= link_to p, search_path(q: @query, page: p) %>
+        <% end %>
+      <% end %>
+
+      <% if @page < @total_pages %>
+        <%= link_to "Next →", search_path(q: @query, page: @page + 1) %>
+      <% end %>
+    </nav>
+  <% end %>
+<% end %>
+
+<br>
+
+<div>
+  <%= link_to "Back to Authors", authors_path %>
+</div>

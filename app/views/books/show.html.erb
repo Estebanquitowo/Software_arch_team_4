@@ -1,0 +1,44 @@
+<% content_for :title, @book.title %>
+
+<p style="color: green"><%= notice %></p>
+
+<%= render @book %>
+
+<h2>Reviews</h2>
+
+<% if @book.reviews.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>Rating</th>
+        <th>Title</th>
+        <th>Reviewer</th>
+        <th colspan="2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @book.reviews.each do |review| %>
+        <tr>
+          <td><%= review.rating %></td>
+          <td><%= review.title %></td>
+          <td><%= review.reviewer_name %></td>
+          <td><%= link_to "Edit", edit_book_review_path(@book, review) %></td>
+          <td><%= button_to "Destroy", book_review_path(@book, review), method: :delete %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No reviews yet.</p>
+<% end %>
+
+<br>
+
+<%= link_to "Add review", new_book_review_path(@book) %> |
+
+<div>
+  <%= link_to "Edit this book", edit_book_path(@book) %> |
+  <%= link_to "Back to books", books_path %>
+
+  <%= button_to "Destroy this book", @book, method: :delete %>
+</div>
