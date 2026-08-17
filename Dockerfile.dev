@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+ARG RUBY_VERSION=4.0.6
+FROM docker.io/library/ruby:$RUBY_VERSION-slim
+
+# Set working directory
+WORKDIR /rails
+
+# Install base and build packages
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      curl \
+      git \
+      libyaml-dev \
+      pkg-config \
+      libjemalloc2 && \
+    ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Development environment variables
+ENV RAILS_ENV="development" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+
+# Install bundler dependencies
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+# Copy application source code
+COPY . .
+
+# Expose Rails default server port
+EXPOSE 3000
+
+# Default command (can be overridden by docker-compose)
+CMD ["bin/rails", "server", "-b", "0.0.0.0"]

@@ -11,7 +11,9 @@ services:
       MONGO_INITDB_DATABASE: software_arch_team4_development
 
   web:
-    build: . # uses default Rails Dockerfile
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev # web image builds with dev dockerfile for development environment
     container_name: software_arch_web
     command: bin/rails server -b 0.0.0.0
     ports:
