@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  root "home#index"
+
   resources :authors
 
   resources :books do
@@ -11,8 +13,6 @@ Rails.application.routes.draw do
   get "reports/top_selling_books", to: "reports#top_selling_books"
 
   get "search", to: "search#index"
-
-  root "authors#index"
 
   get "debug", to: "debug#show"
 

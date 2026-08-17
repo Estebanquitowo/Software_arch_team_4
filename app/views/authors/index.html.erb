@@ -1,13 +1,39 @@
-<% content_for :title, "Home" %>
+<% content_for :title, "Authors" %>
 
-<h1>Software Arch Team 4</h1>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <h1>Authors</h1>
+  <%= link_to "New Author", new_author_path, class: "btn" %>
+</div>
 
-<h2>Navigation</h2>
-<ul>
-  <li><%= link_to "Authors", authors_path %></li>
-  <li><%= link_to "Books", books_path %></li>
-  <li><%= link_to "Authors Summary (with sort & filter)", reports_authors_summary_path %></li>
-  <li><%= link_to "Top 10 Rated Books", reports_top_rated_books_path %></li>
-  <li><%= link_to "Top 50 Selling Books", reports_top_selling_books_path %></li>
-  <li><%= link_to "Search Books", search_path %></li>
-</ul>
+<p style="color: green"><%= notice %></p>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Date of Birth</th>
+      <th>Country</th>
+      <th>Description</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @authors.each do |author| %>
+      <tr>
+        <td><%= link_to author.name, author %></td>
+        <td><%= author.date_of_birth %></td>
+        <td><%= author.country_of_origin %></td>
+        <td><%= truncate(author.short_description, length: 80) %></td>
+        <td>
+          <%= link_to "Show", author %> |
+          <%= link_to "Edit", edit_author_path(author) %> |
+          <%= link_to "Delete", author, data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p style="margin-top: 20px;">
+  <%= link_to "Back to Home", root_path %>
+</p>

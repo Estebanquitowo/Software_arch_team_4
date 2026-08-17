@@ -1,0 +1,13 @@
+<% content_for :title, "Home" %>
+
+<h1>Software Arch Team 4</h1>
+
+<h2>Navigation</h2>
+<ul>
+  <li><%= link_to "Authors", authors_path %></li>
+  <li><%= link_to "Books", books_path %></li>
+  <li><%= link_to "Authors Summary (with sort & filter)", reports_authors_summary_path %></li>
+  <li><%= link_to "Top 10 Rated Books", reports_top_rated_books_path %></li>
+  <li><%= link_to "Top 50 Selling Books", reports_top_selling_books_path %></li>
+  <li><%= link_to "Search Books", search_path %></li>
+</ul>
