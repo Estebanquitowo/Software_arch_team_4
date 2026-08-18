@@ -18,4 +18,9 @@ class Book
   index({ "sales.year" => 1 }, background: true)
 
   validates :title, :summary, presence: true
+
+  def recalculate_sales_count!
+    total = sales.sum { |s| s.units_sold || 0 }
+    set(number_of_sales: total)
+  end
 end
