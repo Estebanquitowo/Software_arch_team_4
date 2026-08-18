@@ -1,9 +1,10 @@
-<%= form_with(model: [book, review]) do |form| %>
+<%= form_with(model: [book, review], class: "space-y-4 max-w-lg") do |form| %>
   <% if review.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(review.errors.count, "error") %> prohibited this review from being saved:</h2>
-
-      <ul>
+    <div class="alert-error">
+      <h2 class="font-semibold mb-2">
+        <%= pluralize(review.errors.count, "error") %> prohibited this review from being saved:
+      </h2>
+      <ul class="list-disc list-inside space-y-1">
         <% review.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -12,26 +13,26 @@
   <% end %>
 
   <div>
-    <%= form.label :rating, style: "display: block" %>
-    <%= form.number_field :rating, in: 1..5 %>
+    <%= form.label :rating, "Rating (1 to 5)", class: "form-label" %>
+    <%= form.number_field :rating, in: 1..5, class: "form-input" %>
   </div>
 
   <div>
-    <%= form.label :title, style: "display: block" %>
-    <%= form.text_field :title %>
+    <%= form.label :title, "Review Title", class: "form-label" %>
+    <%= form.text_field :title, class: "form-input", placeholder: "Write a title for your review..." %>
   </div>
 
   <div>
-    <%= form.label :content, style: "display: block" %>
-    <%= form.textarea :content %>
+    <%= form.label :reviewer_name, "Your Name", class: "form-label" %>
+    <%= form.text_field :reviewer_name, class: "form-input", placeholder: "e.g., John Doe" %>
   </div>
 
   <div>
-    <%= form.label :reviewer_name, style: "display: block" %>
-    <%= form.text_field :reviewer_name %>
+    <%= form.label :content, "Review Content", class: "form-label" %>
+    <%= form.textarea :content, rows: 4, class: "form-input", placeholder: "Write your thoughts on the book..." %>
   </div>
 
   <div>
-    <%= form.submit %>
+    <%= form.submit class: "btn-primary" %>
   </div>
 <% end %>

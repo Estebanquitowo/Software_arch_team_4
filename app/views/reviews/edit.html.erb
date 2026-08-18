@@ -1,11 +1,15 @@
 <% content_for :title, "Editing review" %>
 
-<h1>Editing review for <%= @book.title %></h1>
+<div class="mb-4">
+  <%= link_to @book, class: "btn-back" do %>
+    <span class="mr-1">&larr;</span> Back to <%= @book.title %>
+  <% end %>
+</div>
+
+<h1 class="page-heading">Editing Review for <%= @book.title %></h1>
 
 <%= render "form", book: @book, review: @review %>
 
-<br>
-
-<div>
-  <%= link_to "Back to book", @book %>
+<div class="mt-6">
+  <%= link_to "Back to book", @book, class: "btn-link" %>
 </div>
