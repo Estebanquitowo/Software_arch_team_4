@@ -1,35 +1,59 @@
 <% content_for :title, "Books" %>
 
-<h1>Books</h1>
+<div class="flex justify-between items-center mb-6">
+  <h1 class="page-heading mb-0">Books</h1>
+  <%= link_to "New Book", new_book_path, class: "btn-primary" %>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Publication date</th>
-      <th>Avg score</th>
-      <th>Sales</th>
-      <th colspan="3"></th>
-    </tr>
-  </thead>
+<% if notice.present? %>
+  <div class="alert-notice">
+    <%= notice %>
+  </div>
+<% end %>
 
-  <tbody>
-    <% @books.each do |book| %>
+<div class="table-container">
+  <table class="table-base">
+    <thead>
       <tr>
-        <td><%= book.title %></td>
-        <td><%= book.author&.name %></td>
-        <td><%= book.publication_date %></td>
-        <td><%= book.avg_score %></td>
-        <td><%= book.number_of_sales %></td>
-        <td><%= link_to "Show", book %></td>
-        <td><%= link_to "Edit", edit_book_path(book) %></td>
-        <td><%= button_to "Destroy", book, method: :delete %></td>
+        <th class="th-cell">Title</th>
+        <th class="th-cell">Author</th>
+        <th class="th-cell">Publication Date</th>
+        <th class="th-cell">Avg Score</th>
+        <th class="th-cell">Sales</th>
+        <th class="th-cell">Actions</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<br>
-
-<%= link_to "New book", new_book_path %>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @books.each do |book| %>
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="td-cell font-medium text-gray-900">
+            <%= link_to book.title, book, class: "text-blue-600 hover:underline" %>
+          </td>
+          <td class="td-cell">
+            <%= book.author ? link_to(book.author.name, book.author, class: "hover:underline text-gray-700") : "N/A" %>
+          </td>
+          <td class="td-cell">
+            <%= book.publication_date || book.publication_year || "N/A" %>
+          </td>
+          <td class="td-cell">
+            <% if book.avg_score.present? %>
+              <span class="font-semibold text-amber-700">
+                ★ <%= sprintf('%.2f', book.avg_score) %>
+              </span>
+            <% else %>
+              <span class="text-gray-400 text-xs italic">-</span>
+            <% end %>
+          </td>
+          <td class="td-cell">
+            <%= number_with_delimiter(book.number_of_sales || 0) %>
+          </td>
+          <td class="td-cell text-right space-x-2 whitespace-nowrap">
+            <%= link_to "Show", book, class: "btn-link" %>
+            <%= link_to "Edit", edit_book_path(book), class: "btn-link" %>
+            <%= link_to "Delete", book, class: "btn-danger", data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

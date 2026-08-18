@@ -1,44 +1,109 @@
 <% content_for :title, @book.title %>
 
-<p style="color: green"><%= notice %></p>
+<!-- Top Back Link -->
+<div class="mb-4">
+  <%= link_to books_path, class: "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors" do %>
+    <span class="mr-1">&larr;</span> Back to Books
+  <% end %>
+</div>
 
-<%= render @book %>
-
-<h2>Reviews</h2>
-
-<% if @book.reviews.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th>Rating</th>
-        <th>Title</th>
-        <th>Reviewer</th>
-        <th colspan="2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @book.reviews.each do |review| %>
-        <tr>
-          <td><%= review.rating %></td>
-          <td><%= review.title %></td>
-          <td><%= review.reviewer_name %></td>
-          <td><%= link_to "Edit", edit_book_review_path(@book, review) %></td>
-          <td><%= button_to "Destroy", book_review_path(@book, review), method: :delete %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No reviews yet.</p>
+<% if notice.present? %>
+  <div class="alert-notice max-w-3xl">
+    <%= notice %>
+  </div>
 <% end %>
 
-<br>
+<div class="mb-8">
+  <%= render @book %>
+</div>
 
-<%= link_to "Add review", new_book_review_path(@book) %> |
+<!-- Embedded Reviews Section -->
+<div class="max-w-3xl mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="section-heading mb-0">Reviews (<%= @book.reviews.size %>)</h2>
+    <%= link_to "+ Add Review", new_book_review_path(@book), class: "btn-secondary text-xs py-1 px-3" %>
+  </div>
 
-<div>
-  <%= link_to "Edit this book", edit_book_path(@book) %> |
-  <%= link_to "Back to books", books_path %>
+  <% if @book.reviews.any? %>
+    <div class="table-container">
+      <table class="table-base">
+        <thead>
+          <tr>
+            <th class="th-cell">Rating</th>
+            <th class="th-cell">Title</th>
+            <th class="th-cell">Reviewer</th>
+            <th class="th-cell text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @book.reviews.each do |review| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="td-cell font-semibold text-amber-700">
+                ★ <%= review.rating %>/5
+              </td>
+              <td class="td-cell">
+                <span class="font-medium text-gray-900 block">
+                  <%= review.title %>
+                </span>
+                <span class="text-xs text-gray-500">
+                  <%= truncate(review.content, length: 70) %>
+                </span>
+              </td>
+              <td class="td-cell text-xs text-gray-600">
+                <%= review.reviewer_name %>
+              </td>
+              <td class="td-cell text-right space-x-2 whitespace-nowrap">
+                <%= link_to "Edit", edit_book_review_path(@book, review), class: "btn-link" %>
+                <%= link_to "Delete", book_review_path(@book, review), class: "btn-danger", data: { turbo_method: :delete, turbo_confirm: "Delete this review?" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card text-center py-6 text-sm text-gray-500">
+      No reviews yet for this book.
+    </div>
+  <% end %>
+</div>
 
-  <%= button_to "Destroy this book", @book, method: :delete %>
+<!-- Embedded Sales History Section -->
+<% if @book.sales.any? %>
+  <div class="max-w-3xl mb-8">
+    <h2 class="section-heading">Sales History</h2>
+    <div class="table-container">
+      <table class="table-base">
+        <thead>
+          <tr>
+            <th class="th-cell">Year</th>
+            <th class="th-cell">Units Sold</th>
+            <th class="th-cell text-right">Revenue</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @book.sales.sort_by(&:year).reverse.each do |sale| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="td-cell font-medium text-gray-900">
+                <%= sale.year %>
+              </td>
+              <td class="td-cell">
+                <%= number_with_delimiter(sale.units_sold) %>
+              </td>
+              <td class="td-cell text-right text-gray-800 font-medium">
+                <%= number_to_currency(sale.revenue, precision: 0) rescue "$#{sale.revenue}" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<!-- Book Action Footer -->
+<div class="flex items-center space-x-4 max-w-3xl pt-2">
+  <%= link_to "Edit this book", edit_book_path(@book), class: "btn-primary" %>
+  <%= link_to "Back to books", books_path, class: "btn-link" %>
+  <%= button_to "Destroy this book", @book, method: :delete, class: "btn-danger", data: { turbo_confirm: "Are you sure?" } %>
 </div>

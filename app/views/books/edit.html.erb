@@ -1,12 +1,11 @@
 <% content_for :title, "Editing book" %>
 
-<h1>Editing book</h1>
+<h1 class="page-heading">Editing Book</h1>
 
 <%= render "form", book: @book %>
 
-<br>
-
-<div>
-  <%= link_to "Show this book", @book %> |
-  <%= link_to "Back to books", books_path %>
+<div class="mt-6 space-x-3">
+  <%= link_to "Show this book", @book, class: "btn-link" %>
+  <span class="text-gray-400">|</span>
+  <%= link_to "Back to books", books_path, class: "btn-link" %>
 </div>

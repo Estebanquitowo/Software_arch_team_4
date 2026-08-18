@@ -1,36 +1,52 @@
-<div id="<%= dom_id book %>">
-  <div>
-    <strong>Title:</strong>
-    <%= book.title %>
-  </div>
+<div id="<%= dom_id book %>" class="card max-w-3xl">
+  <div class="space-y-4">
+    
+    <div>
+      <span class="field-label">Title</span>
+      <h2 class="text-xl font-bold text-gray-900"><%= book.title %></h2>
+    </div>
 
-  <div>
-    <strong>Summary:</strong>
-    <%= book.summary %>
-  </div>
+    <div>
+      <span class="field-label">Summary</span>
+      <p class="text-sm text-gray-700 leading-relaxed"><%= book.summary.presence || "No summary provided." %></p>
+    </div>
 
-  <div>
-    <strong>Publication date:</strong>
-    <%= book.publication_date %>
-  </div>
+    <%# Smaller Attributes %>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <span class="field-label">Author</span>
+        <p class="text-sm font-medium text-gray-900">
+          <%= book.author ? link_to(book.author.name, book.author, class: "text-blue-600 hover:underline") : "Unknown" %>
+        </p>
+      </div>
 
-  <div>
-    <strong>Publication year:</strong>
-    <%= book.publication_year %>
-  </div>
+      <div>
+        <span class="field-label">Publication</span>
+        <p class="text-sm text-gray-800">
+          <%= book.publication_date || book.publication_year || "N/A" %>
+        </p>
+      </div>
 
-  <div>
-    <strong>Author:</strong>
-    <%= book.author&.name %>
-  </div>
+      <div>
+        <span class="field-label">Avg Rating</span>
+        <p class="text-sm text-gray-800">
+          <% if book.avg_score.present? %>
+            <span class="font-semibold text-amber-700">
+              ★ <%= sprintf('%.2f', book.avg_score) %> / 5
+            </span>
+          <% else %>  
+            <span class="text-gray-400 text-xs italic">Unrated</span>
+          <% end %>
+        </p>
+      </div>
 
-  <div>
-    <strong>Avg score:</strong>
-    <%= book.avg_score %>
-  </div>
+      <div>
+        <span class="field-label">Total Sales</span>
+        <p class="text-sm font-medium text-gray-800">
+          <%= number_with_delimiter(book.number_of_sales || 0) %> units
+        </p>
+      </div>
+    </div>
 
-  <div>
-    <strong>Total sales:</strong>
-    <%= book.number_of_sales %>
   </div>
 </div>
