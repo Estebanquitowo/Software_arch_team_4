@@ -1,13 +1,31 @@
 <% content_for :title, "Home" %>
 
-<h1>Software Arch Team 4</h1>
+<div class="max-w-xl space-y-4">
+  <h1 class="page-heading mb-4">Software Arch Team 4</h1>
 
-<h2>Navigation</h2>
-<ul>
-  <li><%= link_to "Authors", authors_path %></li>
-  <li><%= link_to "Books", books_path %></li>
-  <li><%= link_to "Authors Summary (with sort & filter)", reports_authors_summary_path %></li>
-  <li><%= link_to "Top 10 Rated Books", reports_top_rated_books_path %></li>
-  <li><%= link_to "Top 50 Selling Books", reports_top_selling_books_path %></li>
-  <li><%= link_to "Search Books", search_path %></li>
-</ul>
+  <!-- CRUD Management -->
+  <div class="card">
+    <h2 class="section-heading text-base mb-2">Catalog</h2>
+    <ul class="list-disc list-inside space-y-1.5 text-sm">
+      <li><%= link_to "Authors", authors_path, class: "text-blue-600 hover:underline font-medium" %></li>
+      <li><%= link_to "Books", books_path, class: "text-blue-600 hover:underline font-medium" %></li>
+    </ul>
+  </div>
+
+  <!-- Reports & Analytics -->
+  <div class="card">
+    <h2 class="section-heading text-base mb-2">Reports</h2>
+    <ul class="list-disc list-inside space-y-1.5 text-sm">
+      <li><%= link_to "Authors Summary (with sort & filter)", reports_authors_summary_path, class: "text-blue-600 hover:underline font-medium" %></li>
+      <li><%= link_to "Top 10 Rated Books", reports_top_rated_books_path, class: "text-blue-600 hover:underline font-medium" %></li>
+      <li><%= link_to "Top 50 Best Selling Books", reports_top_selling_books_path, class: "text-blue-600 hover:underline font-medium" %></li>
+    </ul>
+  </div>
+
+  <!-- Search -->
+  <div class="card">
+    <h2>
+      <%= link_to "Search Books", search_path, class: "text-blue-600 hover:underline font-medium" %>
+    </h2>
+  </div>
+</div>
