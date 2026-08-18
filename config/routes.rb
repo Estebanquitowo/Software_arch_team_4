@@ -6,6 +6,7 @@ Rails.application.routes.draw do
 
   resources :books do
     resources :reviews
+    resources :sales
   end
 
   get "reports/authors_summary", to: "reports#authors_summary"
