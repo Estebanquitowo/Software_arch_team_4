@@ -16,7 +16,7 @@
             <th class="th-cell">Year</th>
             <th class="th-cell">Units Sold</th>
             <th class="th-cell">Revenue</th>
-            <th class="th-cell">Actions</th>
+            <th class="th-cell w-44">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -31,7 +31,7 @@
               <td class="td-cell text-gray-800 font-medium">
                 <%= number_to_currency(sale.revenue, precision: 0) rescue "$#{sale.revenue}" %>
               </td>
-              <td class="td-cell text-right space-x-2 whitespace-nowrap">
+              <td class="td-cell w-44 space-x-2 whitespace-nowrap">
                 <%= link_to "Show", book_sale_path(book, sale), class: "btn-link" %>
                 <%= link_to "Edit", edit_book_sale_path(book, sale), class: "btn-link" %>
                 <%= link_to "Delete", book_sale_path(book, sale), class: "btn-danger", data: { turbo_method: :delete, turbo_confirm: "Delete sale record for #{sale.year}?" } %>
