@@ -1,0 +1,33 @@
+<%= form_with(model: [book, sale], class: "space-y-4 max-w-lg") do |form| %>
+  <% if sale.errors.any? %>
+    <div class="alert-error">
+      <h2 class="font-semibold mb-2">
+        <%= pluralize(sale.errors.count, "error") %> prohibited this record from being saved:
+      </h2>
+      <ul class="list-disc list-inside space-y-1">
+        <% sale.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :year, "Sales Year", class: "form-label" %>
+    <%= form.number_field :year, class: "form-input", placeholder: "e.g., 2026" %>
+  </div>
+
+  <div>
+    <%= form.label :units_sold, "Units Sold", class: "form-label" %>
+    <%= form.number_field :units_sold, min: 0, class: "form-input", placeholder: "e.g., 15000" %>
+  </div>
+
+  <div>
+    <%= form.label :revenue, "Total Revenue ($)", class: "form-label" %>
+    <%= form.number_field :revenue, step: :any, min: 0, class: "form-input", placeholder: "e.g., 250000.00" %>
+  </div>
+
+  <div>
+    <%= form.submit class: "btn-primary" %>
+  </div>
+<% end %>

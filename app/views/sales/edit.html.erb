@@ -1,0 +1,16 @@
+<% content_for :title, "Edit Sale Record" %>
+
+<div class="mb-4">
+  <%= link_to @book, class: "btn-back" do %>
+    <span class="mr-1">&larr;</span> Back to <%= @book.title %>
+  <% end %>
+</div>
+
+<h1 class="page-heading">Edit Sale Record</h1>
+<p class="text-sm text-gray-600 mb-6">Book: <span class="font-semibold text-gray-900"><%= @book.title %></span></p>
+
+<%= render "form", book: @book, sale: @sale %>
+
+<div class="mt-6">
+  <%= link_to "Back to book", @book, class: "btn-link" %>
+</div>

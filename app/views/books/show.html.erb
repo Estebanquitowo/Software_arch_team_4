@@ -20,38 +20,8 @@
 <!-- Embedded Reviews Partial -->
 <%= render "reviews/reviews_list", book: @book %>
 
-<!-- Embedded Sales History Section -->
-<% if @book.sales.any? %>
-  <div class="max-w-3xl mb-8">
-    <h2 class="section-heading">Sales History</h2>
-    <div class="table-container">
-      <table class="table-base">
-        <thead>
-          <tr>
-            <th class="th-cell">Year</th>
-            <th class="th-cell">Units Sold</th>
-            <th class="th-cell text-right">Revenue</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <% @book.sales.sort_by(&:year).reverse.each do |sale| %>
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="td-cell font-medium text-gray-900">
-                <%= sale.year %>
-              </td>
-              <td class="td-cell">
-                <%= number_with_delimiter(sale.units_sold) %>
-              </td>
-              <td class="td-cell text-right text-gray-800 font-medium">
-                <%= number_to_currency(sale.revenue, precision: 0) rescue "$#{sale.revenue}" %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </div>
-<% end %>
+<!-- Embedded Sales History Partial -->
+<%= render "sales/sales_list", book: @book %>
 
 <!-- Book Action Footer -->
 <div class="flex items-center space-x-4 max-w-3xl pt-2">

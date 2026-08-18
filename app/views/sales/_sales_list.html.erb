@@ -1,0 +1,49 @@
+<!-- Akin to Reviews#_reviews_list -->
+<%# Expects local variable: book %>
+<div class="max-w-3xl mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="section-heading mb-0">
+      Sales History (<%= book.sales.size %>)
+    </h2>
+    <%= link_to "+ Add Sale Record", new_book_sale_path(book), class: "btn-secondary text-xs py-1 px-3" %>
+  </div>
+
+  <% if book.sales.any? %>
+    <div class="table-container">
+      <table class="table-base">
+        <thead>
+          <tr>
+            <th class="th-cell">Year</th>
+            <th class="th-cell">Units Sold</th>
+            <th class="th-cell">Revenue</th>
+            <th class="th-cell">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% book.sales.sort_by(&:year).reverse.each do |sale| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="td-cell font-medium text-gray-900">
+                <%= sale.year %>
+              </td>
+              <td class="td-cell">
+                <%= number_with_delimiter(sale.units_sold) %>
+              </td>
+              <td class="td-cell text-gray-800 font-medium">
+                <%= number_to_currency(sale.revenue, precision: 0) rescue "$#{sale.revenue}" %>
+              </td>
+              <td class="td-cell text-right space-x-2 whitespace-nowrap">
+                <%= link_to "Show", book_sale_path(book, sale), class: "btn-link" %>
+                <%= link_to "Edit", edit_book_sale_path(book, sale), class: "btn-link" %>
+                <%= link_to "Delete", book_sale_path(book, sale), class: "btn-danger", data: { turbo_method: :delete, turbo_confirm: "Delete sale record for #{sale.year}?" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card text-center py-6 text-sm text-gray-500">
+      No sales records yet for this book.
+    </div>
+  <% end %>
+</div>

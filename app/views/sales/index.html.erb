@@ -1,0 +1,11 @@
+<% content_for :title, "Sales History for #{@book.title}" %>
+
+<div class="mb-4">
+  <%= link_to @book, class: "btn-back" do %>
+    <span class="mr-1">&larr;</span> Back to <%= @book.title %>
+  <% end %>
+</div>
+
+<h1 class="page-heading">Sales History for <%= @book.title %></h1>
+
+<%= render "sales/sales_list", book: @book %>
