@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   resources :authors
 
   resources :books do
-    resources :reviews, except: [ :show ]
+    resources :reviews
   end
 
   get "reports/authors_summary", to: "reports#authors_summary"
@@ -13,7 +13,6 @@ Rails.application.routes.draw do
   get "reports/top_selling_books", to: "reports#top_selling_books"
 
   get "search", to: "search#index"
-
   get "debug", to: "debug#show"
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

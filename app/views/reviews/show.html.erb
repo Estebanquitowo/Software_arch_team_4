@@ -1,0 +1,50 @@
+<% content_for :title, "#{@review.title} - Review" %>
+
+<!-- Top Back Link -->
+<div class="mb-4">
+  <%= link_to @book, class: "btn-back" do %>
+    <span class="mr-1">&larr;</span> Back to <%= @book.title %>
+  <% end %>
+</div>
+
+<% if notice.present? %>
+  <div class="alert-notice max-w-2xl">
+    <%= notice %>
+  </div>
+<% end %>
+
+<div class="card max-w-2xl mb-6">
+  <div class="space-y-4">
+    <div>
+      <div class="flex items-center justify-between">
+        <span class="field-label">Review Headline</span>
+        <span class="font-semibold text-amber-700 text-sm">★ <%= @review.rating %> / 5</span>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900"><%= @review.title %></h2>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+      <div>
+        <span class="field-label">Reviewer</span>
+        <p class="text-sm font-medium text-gray-900"><%= @review.reviewer_name %></p>
+      </div>
+      <div>
+        <span class="field-label">Book</span>
+        <p class="text-sm text-gray-900">
+          <%= link_to @book.title, @book, class: "text-blue-600 hover:underline" %>
+        </p>
+      </div>
+    </div>
+
+    <div class="pt-2 border-t border-gray-100">
+      <span class="field-label">Review</span>
+      <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line"><%= @review.content %></p>
+    </div>
+  </div>
+</div>
+
+<div class="flex items-center space-x-4 max-w-2xl">
+  <%= link_to "Edit this review", edit_book_review_path(@book, @review), class: "btn-primary" %>
+  <%= link_to "Back to book", @book, class: "btn-link" %>
+  <%= button_to "Destroy this review", book_review_path(@book, @review), method: :delete, class: "btn-danger", data: { turbo_confirm: "Are you sure?" } %>
+</div>

@@ -35,6 +35,7 @@
                 <%= review.reviewer_name %>
               </td>
               <td class="td-cell text-right space-x-2 whitespace-nowrap">
+                <%= link_to "Show", book_review_path(@book, review), class: "btn-link" %>
                 <%= link_to "Edit", edit_book_review_path(@book, review), class: "btn-link" %>
                 <%= link_to "Delete", book_review_path(@book, review), class: "btn-danger", data: { turbo_method: :delete, turbo_confirm: "Delete this review?" } %>
               </td>

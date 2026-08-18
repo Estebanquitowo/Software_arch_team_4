@@ -1,10 +1,14 @@
 class ReviewsController < ApplicationController
   before_action :set_book
-  before_action :set_review, only: %i[ edit update destroy ]
+  before_action :set_review, only: %i[ show edit update destroy ]
 
   # GET /books/:book_id/reviews
   def index
     @reviews = @book.reviews
+  end
+
+  # GET /books/:book_id/reviews/:id
+  def show
   end
 
   # GET /books/:book_id/reviews/new
@@ -22,8 +26,8 @@ class ReviewsController < ApplicationController
 
     respond_to do |format|
       if @review.save
-        format.html { redirect_to @book, notice: "Review was successfully created." }
-        format.json { render :show, status: :created, location: @book }
+        format.html { redirect_to [ @book, @review ], notice: "Review was successfully created." }
+        format.json { render :show, status: :created, location: [ @book, @review ] }
       else
         format.html { render :new, status: :unprocessable_content }
         format.json { render json: @review.errors, status: :unprocessable_content }
@@ -35,8 +39,8 @@ class ReviewsController < ApplicationController
   def update
     respond_to do |format|
       if @review.update(review_params)
-        format.html { redirect_to @book, notice: "Review was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @book }
+        format.html { redirect_to [ @book, @review ], notice: "Review was successfully updated.", status: :see_other }
+        format.json { render :show, status: :ok, location: [ @book, @review ] }
       else
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @review.errors, status: :unprocessable_content }
