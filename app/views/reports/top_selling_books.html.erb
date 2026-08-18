@@ -1,35 +1,56 @@
 <% content_for :title, "Top 50 Selling Books" %>
 
-<h1>Top 50 Selling Books of All Time</h1>
+<div class="mb-4">
+  <%= link_to books_path, class: "btn-back" do %>
+    <span class="mr-1">&larr;</span> Back to Books
+  <% end %>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Total Sales (Book)</th>
-      <th>Total Sales (Author)</th>
-      <th>Top 5 in Year</th>
-    </tr>
-  </thead>
+<h1 class="page-heading">Top 50 Best Selling Books of All Time</h1>
 
-  <tbody>
-    <% @selling_books.each_with_index do |detail, index| %>
+<div class="table-container">
+  <table class="table-base">
+    <thead>
       <tr>
-        <td><%= index + 1 %></td>
-        <td><%= detail[:book].title %></td>
-        <td><%= detail[:author_name] %></td>
-        <td><%= number_with_delimiter(detail[:book_sales]) %></td>
-        <td><%= number_with_delimiter(detail[:author_sales]) %></td>
-        <td><%= detail[:top5_in_year] ? "Yes" : "No" %></td>
+        <th class="th-cell w-12 text-center">#</th>
+        <th class="th-cell">Title</th>
+        <th class="th-cell">Author</th>
+        <th class="th-cell">Book Sales</th>
+        <th class="th-cell">Author Total Sales</th>
+        <th class="th-cell text-center">Top 5 in Year</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<br>
-
-<div>
-  <%= link_to "Back to Authors", authors_path %>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @selling_books.each_with_index do |detail, index| %>
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="td-cell text-center font-bold text-gray-500">
+            <%= index + 1 %>
+          </td>
+          <td class="td-cell font-medium text-gray-900">
+            <%= link_to detail[:book].title, detail[:book], class: "text-blue-600 hover:underline" %>
+          </td>
+          <td class="td-cell">
+            <%= detail[:author_name] || "N/A" %>
+          </td>
+          <td class="td-cell font-medium text-gray-800"><%= number_with_delimiter(detail[:book_sales]) %>
+            units
+          </td>
+          <td class="td-cell text-gray-600"><%= number_with_delimiter(detail[:author_sales]) %>
+            units
+          </td>
+          <td class="td-cell text-center">
+            <% if detail[:top5_in_year] %>
+              <span class="items-center text-s text-emerald-700 bold">
+                Yes
+              </span>
+            <% else %>
+              <span class="items-center text-s text-red-700 bold">
+                No
+              </span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>

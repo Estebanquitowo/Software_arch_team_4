@@ -1,51 +1,78 @@
 <% content_for :title, "Top 10 Rated Books" %>
 
-<h1>Top 10 Rated Books</h1>
+<div class="mb-4">
+  <%= link_to books_path, class: "btn-back" do %>
+    <span class="mr-1">&larr;</span> Back to Books
+  <% end %>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Avg Score</th>
-      <th>Highest Rated Review</th>
-      <th>Lowest Rated Review</th>
-    </tr>
-  </thead>
+<h1 class="page-heading">Top 10 Rated Books</h1>
 
-  <tbody>
-    <% @book_details.each_with_index do |detail, index| %>
+<div class="table-container">
+  <table class="table-base">
+    <thead>
       <tr>
-        <td><%= index + 1 %></td>
-        <td><%= detail[:book].title %></td>
-        <td><%= detail[:author_name] %></td>
-        <td><%= detail[:book].avg_score&.round(2) %></td>
-        <td>
-          <% if detail[:highest_review] %>
-            <strong><%= detail[:highest_review].rating %>/5</strong> –
-            "<%= detail[:highest_review].title %>"
-            by <%= detail[:highest_review].reviewer_name %>
-          <% else %>
-            N/A
-          <% end %>
-        </td>
-        <td>
-          <% if detail[:lowest_review] %>
-            <strong><%= detail[:lowest_review].rating %>/5</strong> –
-            "<%= detail[:lowest_review].title %>"
-            by <%= detail[:lowest_review].reviewer_name %>
-          <% else %>
-            N/A
-          <% end %>
-        </td>
+        <th class="th-cell w-12 text-center">#</th>
+        <th class="th-cell">Title</th>
+        <th class="th-cell">Author</th>
+        <th class="th-cell">Avg Score</th>
+        <th class="th-cell">Highest Rated Review</th>
+        <th class="th-cell">Lowest Rated Review</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<br>
-
-<div>
-  <%= link_to "Back to Authors", authors_path %>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @book_details.each_with_index do |detail, index| %>
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="td-cell text-center font-bold text-gray-500">
+            <%= index + 1 %>
+          </td>
+          <td class="td-cell font-medium text-gray-900">
+            <%= link_to detail[:book].title, detail[:book], class: "text-blue-600 hover:underline" %>
+          </td>
+          <td class="td-cell">
+            <%= detail[:author_name] || "N/A" %>
+          </td>
+          <td class="td-cell">
+            <span class="font-semibold text-amber-700">
+              ★ <%= detail[:book].avg_score&.round(2) %>
+            </span>
+          </td>
+          <td class="td-cell text-xs">
+            <% if detail[:highest_review] %>
+              <span class="font-semibold text-amber-700">
+                ★ <%= detail[:highest_review].rating %>/5
+              </span>
+              <span class="font-medium text-gray-800">
+                "<%= detail[:highest_review].title %>"
+              </span>
+              <span class="text-gray-500 block mt-0.5">
+                by <%= detail[:highest_review].reviewer_name %>
+              </span>
+            <% else %>
+              <span class="text-gray-400 italic">
+                N/A
+              </span>
+            <% end %>
+          </td>
+          <td class="td-cell text-xs">
+            <% if detail[:lowest_review] %>
+              <span class="font-semibold text-amber-700">
+                ★ <%= detail[:lowest_review].rating %>/5
+              </span>
+              <span class="font-medium text-gray-800">
+                "<%= detail[:lowest_review].title %>"
+              </span>
+              <span class="text-gray-500 block mt-0.5">
+                by <%= detail[:lowest_review].reviewer_name %>
+              </span>
+            <% else %>
+              <span class="text-gray-400 italic">
+                N/A
+              </span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>

@@ -1,50 +1,85 @@
 <% content_for :title, "Authors Summary" %>
 
-<h1>Authors Summary</h1>
+<div class="mb-4">
+  <%= link_to authors_path, class: "btn-back" do %>
+    <span class="mr-1">&larr;</span> Back to Authors
+  <% end %>
+</div>
 
-<form method="get" action="<%= reports_authors_summary_path %>">
-  <label for="country">Filter by country:</label>
-  <select name="country" id="country">
-    <option value="">All countries</option>
-    <% @countries.each do |country| %>
-      <option value="<%= country %>" <%= "selected" if @country_filter == country %>><%= country %></option>
-    <% end %>
-  </select>
-  <input type="hidden" name="sort" value="<%= @sort_column %>">
-  <input type="hidden" name="dir" value="<%= @sort_direction %>">
-  <button type="submit">Filter</button>
-</form>
+<h1 class="page-heading">Authors Summary</h1>
 
-<br>
-
-<table>
-  <thead>
-    <tr>
-      <% { "name" => "Name", "books_count" => "Published Books", "avg_score" => "Avg Score", "total_sales" => "Total Sales" }.each do |col, label| %>
-        <th>
-          <%= link_to label, reports_authors_summary_path(sort: col, dir: @sort_column == col && @sort_direction == "asc" ? "desc" : "asc", country: @country_filter) %>
-          <% if @sort_column == col %>
-            (<%= @sort_direction == "asc" ? "▲" : "▼" %>)
-          <% end %>
-        </th>
+<!-- Filter Bar -->
+<div class="card mb-6 p-4">
+  <form method="get" action="<%= reports_authors_summary_path %>" class="flex flex-wrap items-center gap-3">
+    <label for="country" class="text-sm font-medium text-gray-700">
+      Filter by country:
+    </label>
+    <select name="country" id="country" class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-slate-500 bg-white">
+      <option value="">
+        All countries
+      </option>
+      <% @countries.each do |country| %>
+        <option value="<%= country %>" <%= "selected" if @country_filter == country %>><%= country %></option>
       <% end %>
-    </tr>
-  </thead>
+    </select>
 
-  <tbody>
-    <% @authors_summary.each do |author| %>
-      <tr>
-        <td><%= author["name"] %></td>
-        <td><%= author["books_count"] %></td>
-        <td><%= author["avg_score"] ? author["avg_score"].round(2) : "N/A" %></td>
-        <td><%= author["total_sales"] || 0 %></td>
-      </tr>
+    <input type="hidden" name="sort" value="<%= @sort_column %>">
+    <input type="hidden" name="dir" value="<%= @sort_direction %>">
+
+    <button type="submit" class="btn-primary py-1.5 px-4 text-xs">Filter</button>
+
+    <% if @country_filter.present? %>
+      <%= link_to "Clear filter", reports_authors_summary_path(sort: @sort_column, dir: @sort_direction), class: "btn-link text-xs ml-2" %>
     <% end %>
-  </tbody>
-</table>
+  </form>
+</div>
 
-<br>
-
-<div>
-  <%= link_to "Back to Authors", authors_path %>
+<!-- Summary Table -->
+<div class="table-container">
+  <table class="table-base">
+    <thead>
+      <tr>
+        <% { "name" => "Author Name", "books_count" => "Published Books", "avg_score" => "Avg Score", "total_sales" => "Total Sales" }.each do |col, label| %>
+          <th class="th-cell">
+            <%= link_to reports_authors_summary_path(sort: col, dir: @sort_column == col && @sort_direction == "asc" ? "desc" : "asc", country: @country_filter), class: "inline-flex items-center space-x-1 hover:text-slate-900 group" do %>
+              <span><%= label %></span>
+              <span class="text-xs <%= @sort_column == col ? 'text-slate-900 font-bold' : 'text-gray-400 group-hover:text-gray-600' %>">
+                <%= @sort_column == col ? (@sort_direction == "asc" ? "▲" : "▼") : "↕" %>
+              </span>
+            <% end %>
+          </th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% if @authors_summary.any? %>
+        <% @authors_summary.each do |author| %>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="td-cell font-medium text-gray-900">
+              <%= link_to author["name"], author_path(author["_id"]), class: "text-blue-600 hover:underline" %>
+            </td>
+            <td class="td-cell">
+              <%= author["books_count"] %>
+            </td>
+            <td class="td-cell">
+              <% if author["avg_score"] %>
+                <span class="badge-score">★ <%= author["avg_score"].round(2) %></span>
+              <% else %>
+                <span class="text-gray-400 text-xs italic">N/A</span>
+              <% end %>
+            </td>
+            <td class="td-cell font-medium text-gray-800"><%= number_with_delimiter(author["total_sales"] || 0) %>
+              units
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="4" class="td-cell text-center py-6 text-gray-500">
+            No authors found matching this filter.
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>
