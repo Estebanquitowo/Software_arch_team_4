@@ -1,9 +1,10 @@
-<%= form_with(model: author) do |form| %>
+<%= form_with(model: author, class: "space-y-4 max-w-lg") do |form| %>
   <% if author.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(author.errors.count, "error") %> prohibited this author from being saved:</h2>
-
-      <ul>
+    <div class="alert-error">
+      <h2 class="font-semibold mb-2">
+        <%= pluralize(author.errors.count, "error") %> prohibited this author from being saved:
+      </h2>
+      <ul class="list-disc list-inside space-y-1">
         <% author.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -12,26 +13,26 @@
   <% end %>
 
   <div>
-    <%= form.label :name, style: "display: block" %>
-    <%= form.text_field :name %>
+    <%= form.label :name, class: "form-label" %>
+    <%= form.text_field :name, class: "form-input" %>
   </div>
 
   <div>
-    <%= form.label :date_of_birth, style: "display: block" %>
-    <%= form.date_field :date_of_birth %>
+    <%= form.label :date_of_birth, class: "form-label" %>
+    <%= form.date_field :date_of_birth, class: "form-input" %>
   </div>
 
   <div>
-    <%= form.label :country_of_origin, style: "display: block" %>
-    <%= form.text_field :country_of_origin %>
+    <%= form.label :country_of_origin, class: "form-label" %>
+    <%= form.text_field :country_of_origin, class: "form-input" %>
   </div>
 
   <div>
-    <%= form.label :short_description, style: "display: block" %>
-    <%= form.textarea :short_description %>
+    <%= form.label :short_description, class: "form-label" %>
+    <%= form.textarea :short_description, rows: 4, class: "form-input" %>
   </div>
 
   <div>
-    <%= form.submit %>
+    <%= form.submit class: "btn-primary" %>
   </div>
 <% end %>

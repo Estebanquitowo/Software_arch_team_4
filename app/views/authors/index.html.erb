@@ -1,39 +1,49 @@
 <% content_for :title, "Authors" %>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-  <h1>Authors</h1>
-  <%= link_to "New Author", new_author_path, class: "btn" %>
+<div class="flex justify-between items-center mb-6">
+  <h1 class="page-heading mb-0">Authors</h1>
+  <%= link_to "New Author", new_author_path, class: "btn-primary" %>
 </div>
 
-<p style="color: green"><%= notice %></p>
+<% if notice.present? %>
+  <div class="alert-notice">
+    <%= notice %>
+  </div>
+<% end %>
 
-<table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Date of Birth</th>
-      <th>Country</th>
-      <th>Description</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @authors.each do |author| %>
+<div class="table-container">
+  <table class="table-base">
+    <thead>
       <tr>
-        <td><%= link_to author.name, author %></td>
-        <td><%= author.date_of_birth %></td>
-        <td><%= author.country_of_origin %></td>
-        <td><%= truncate(author.short_description, length: 80) %></td>
-        <td>
-          <%= link_to "Show", author %> |
-          <%= link_to "Edit", edit_author_path(author) %> |
-          <%= link_to "Delete", author, data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
-        </td>
+        <th class="th-cell">Name</th>
+        <th class="th-cell">Date of Birth</th>
+        <th class="th-cell">Country</th>
+        <th class="th-cell">Description</th>
+        <th class="th-cell text-right">Actions</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<p style="margin-top: 20px;">
-  <%= link_to "Back to Home", root_path %>
-</p>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @authors.each do |author| %>
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="td-cell font-medium text-gray-900">
+            <%= link_to author.name, author, class: "text-blue-600 hover:underline" %>
+          </td>
+          <td class="td-cell">
+            <%= author.date_of_birth || "N/A" %>
+          </td>
+          <td class="td-cell">
+            <%= author.country_of_origin || "N/A" %>
+          </td>
+          <td class="td-cell">
+            <%= truncate(author.short_description, length: 80) %>
+          </td>
+          <td class="td-cell text-right space-x-2 whitespace-nowrap">
+            <%= link_to "Show", author, class: "btn-link" %>
+            <%= link_to "Edit", edit_author_path(author), class: "btn-link" %>
+            <%= link_to "Delete", author, class: "btn-danger", data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

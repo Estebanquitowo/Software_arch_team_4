@@ -1,11 +1,9 @@
 <% content_for :title, "New author" %>
 
-<h1>New author</h1>
+<h1 class="page-heading">New Author</h1>
 
 <%= render "form", author: @author %>
 
-<br>
-
-<div>
-  <%= link_to "Back to authors", authors_path %>
+<div class="mt-6">
+  <%= link_to "Back to authors", authors_path, class: "btn-link" %>
 </div>

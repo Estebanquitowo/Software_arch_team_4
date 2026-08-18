@@ -1,12 +1,13 @@
 <% content_for :title, "Editing author" %>
 
-<h1>Editing author</h1>
+<h1 class="page-heading">Editing Author</h1>
 
 <%= render "form", author: @author %>
 
-<br>
-
-<div>
-  <%= link_to "Show this author", @author %> |
-  <%= link_to "Back to authors", authors_path %>
+<div class="mt-6 space-x-3">
+  <%= link_to "Show this author", @author, class: "btn-link" %>
+  <span class="text-gray-400">
+    |
+  </span>
+  <%= link_to "Back to authors", authors_path, class: "btn-link" %>
 </div>
