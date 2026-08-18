@@ -1,64 +1,112 @@
 <% content_for :title, "Search Books" %>
 
-<h1>Search Books</h1>
+<h1 class="page-heading">Search Books</h1>
 
-<form method="get" action="<%= search_path %>">
-  <input type="text" name="q" value="<%= @query %>" placeholder="Search by summary...">
-  <button type="submit">Search</button>
-</form>
-
-<br>
+<!-- Search Bar -->
+<div class="card mb-6 p-4">
+  <form method="get" action="<%= search_path %>" class="flex items-center gap-3">
+    <input 
+      type="text" 
+      name="q" 
+      value="<%= @query %>" 
+      placeholder="Search words in book summaries..." 
+      class="form-input flex-1"
+      autofocus
+    >
+    <button type="submit" class="btn-primary py-2 px-5">
+      Search
+    </button>
+  </form>
+</div>
 
 <% if @query.present? %>
-  <p>Showing <%= @books.size %> of <%= @total %> results for "<%= @query %>" (page <%= @page %> of <%= @total_pages %>)</p>
+  <div class="flex items-center justify-between mb-4 text-sm text-gray-600">
+    <p>
+      Showing 
+      <span class="font-semibold text-gray-900">
+        <%= @books.size %>
+      </span> 
+      of 
+      <span class="font-semibold text-gray-900">
+        <%= @total %>
+      </span> 
+      results for 
+      <span class="font-semibold text-gray-900">
+        "<%= @query %>"
+      </span>
+    </p>
+    <p class="text-xs text-gray-500">
+      Page <%= @page %> of <%= @total_pages %>
+    </p>
+  </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Author</th>
-        <th>Publication Year</th>
-        <th>Avg Score</th>
-        <th>Summary</th>
-      </tr>
-    </thead>
+  <% if @books.any? %>
+    <div class="table-container mb-6">
+      <table class="table-base">
+        <thead>
+          <tr>
+            <th class="th-cell">Title</th>
+            <th class="th-cell">Author</th>
+            <th class="th-cell">Year</th>
+            <th class="th-cell">Avg Score</th>
+            <th class="th-cell">Summary</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @books.each do |book| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="td-cell font-medium text-gray-900 whitespace-nowrap">
+                <%= link_to book.title, book, class: "text-blue-600 hover:underline" %>
+              </td>
+              <td class="td-cell whitespace-nowrap">
+                <%= book.author&.name || "N/A" %>
+              </td>
+              <td class="td-cell whitespace-nowrap">
+                <%= book.publication_year || "N/A" %>
+              </td>
+              <td class="td-cell whitespace-nowrap">
+                <% if book.avg_score.present? %>
+                  <span class="font-semibold text-amber-700">
+                    ★ <%= sprintf('%.2f', book.avg_score) %>
+                  </span>
+                <% else %>
+                  <span class="text-gray-400 text-xs italic">
+                    -
+                  </span>
+                <% end %>
+              </td>
+              <td class="td-cell text-xs text-gray-700 leading-relaxed max-w-md">
+                <%= truncate(book.summary, length: 160) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
 
-    <tbody>
-      <% @books.each do |book| %>
-        <tr>
-          <td><%= book.title %></td>
-          <td><%= book.author&.name %></td>
-          <td><%= book.publication_year %></td>
-          <td><%= book.avg_score&.round(2) %></td>
-          <td><%= truncate(book.summary, length: 150) %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-
-  <% if @total_pages > 1 %>
-    <nav>
-      <% if @page > 1 %>
-        <%= link_to "← Previous", search_path(q: @query, page: @page - 1) %>
-      <% end %>
-
-      <% (1..@total_pages).each do |p| %>
-        <% if p == @page %>
-          <strong><%= p %></strong>
-        <% else %>
-          <%= link_to p, search_path(q: @query, page: p) %>
+    <!-- Simple Text-Only Pagination -->
+    <% if @total_pages > 1 %>
+      <div class="flex justify-center items-center space-x-3 text-sm my-6">
+        <% if @page > 1 %>
+          <%= link_to "« Previous", search_path(q: @query, page: @page - 1), class: "text-blue-600 hover:underline" %>
         <% end %>
-      <% end %>
 
-      <% if @page < @total_pages %>
-        <%= link_to "Next →", search_path(q: @query, page: @page + 1) %>
-      <% end %>
-    </nav>
+        <% (1..@total_pages).each do |p| %>
+          <% if p == @page %>
+            <span class="font-bold text-gray-900">[<%= p %>]</span>
+          <% else %>
+            <%= link_to p, search_path(q: @query, page: p), class: "text-blue-600 hover:underline" %>
+          <% end %>
+        <% end %>
+
+        <% if @page < @total_pages %>
+          <%= link_to "Next »", search_path(q: @query, page: @page + 1), class: "text-blue-600 hover:underline" %>
+        <% end %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="card text-center py-8 text-gray-500">
+      No books found with summaries matching your search.
+    </div>
   <% end %>
 <% end %>
-
-<br>
-
-<div>
-  <%= link_to "Back to Authors", authors_path %>
-</div>
