@@ -1,9 +1,14 @@
 class AuthorsController < ApplicationController
+  PAGE_SIZE = 20
   before_action :set_author, only: %i[ show edit update destroy ]
 
   # GET /authors or /authors.json
   def index
-    @authors = Author.all
+    @page = [ Integer(params[:page] || 1, exception: false) || 1, 1 ].max
+    @total = Author.count
+    @total_pages = [ (@total / PAGE_SIZE.to_f).ceil, 1 ].max
+
+    @authors = Author.order_by(title: :asc).skip((@page - 1) * PAGE_SIZE).limit(PAGE_SIZE).to_a
   end
 
   # GET /authors/1 or /authors/1.json

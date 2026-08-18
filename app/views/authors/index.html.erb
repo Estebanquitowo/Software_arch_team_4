@@ -1,7 +1,10 @@
 <% content_for :title, "Authors" %>
 
 <div class="flex justify-between items-center mb-6">
-  <h1 class="page-heading mb-0">Authors</h1>
+  <div>
+    <h1 class="page-heading mb-0">Authors</h1>
+    <p class="text-xs text-gray-500 mt-1">Showing page <%= @page %> of <%= @total_pages %> (<%= @total %> total authors)</p>
+  </div>
   <%= link_to "New Author", new_author_path, class: "btn-primary" %>
 </div>
 
@@ -47,3 +50,6 @@
     </tbody>
   </table>
 </div>
+
+<!-- Pagination -->
+<%= render "shared/pagination", page: @page, total_pages: @total_pages %>
