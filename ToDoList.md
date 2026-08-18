@@ -6,7 +6,7 @@
 - [x] CRUD backend for Authors.
 - [x] CRUD backend for Books.
 - [x] CRUD backend for Reviews (Exists embedded in books#show) (Should maybe do it as a standalone too).
-- [ ] CRUD backend for Sales (Should be embedded in books#show) (Se que no hace sentido pero puede que el profesor quiera que sea asi).
+- [x] CRUD backend for Sales (Should be embedded in books#show)
 - [x] Populate the database with 50 authors, 300 books, 1 to 10 reviews for each book, At least 5 years of sales per book.
 - [x] A table that shows authors, number of published books, average score and total sales. This table should have a sort and filter for each column.
 - [x] A table that shows the top 10 rated books of all time, with their highest-rated and lowest-rated review.
