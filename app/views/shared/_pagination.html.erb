@@ -1,0 +1,20 @@
+<%# locals: (page:, total_pages:) %>
+<% if total_pages > 1 %>
+  <div class="flex justify-center items-center space-x-3 text-sm my-6">
+    <% if page > 1 %>
+      <%= link_to "« Previous", url_for(request.query_parameters.merge(page: page - 1)), class: "text-blue-600 hover:underline" %>
+    <% end %>
+
+    <% (1..total_pages).each do |p| %>
+      <% if p == page %>
+        <span class="font-bold text-gray-900">[<%= p %>]</span>
+      <% else %>
+        <%= link_to p, url_for(request.query_parameters.merge(page: p)), class: "text-blue-600 hover:underline" %>
+      <% end %>
+    <% end %>
+
+    <% if page < total_pages %>
+      <%= link_to "Next »", url_for(request.query_parameters.merge(page: page + 1)), class: "text-blue-600 hover:underline" %>
+    <% end %>
+  </div>
+<% end %>

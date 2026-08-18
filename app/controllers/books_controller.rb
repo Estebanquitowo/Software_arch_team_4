@@ -1,9 +1,14 @@
 class BooksController < ApplicationController
+  PAGE_SIZE = 20
   before_action :set_book, only: %i[ show edit update destroy ]
 
   # GET /books or /books.json
   def index
-    @books = Book.all
+    @page = [ Integer(params[:page] || 1, exception: false) || 1, 1 ].max
+    @total = Book.count
+    @total_pages = [ (@total / PAGE_SIZE.to_f).ceil, 1 ].max
+
+    @books = Book.order_by(title: :asc).skip((@page - 1) * PAGE_SIZE).limit(PAGE_SIZE).to_a
   end
 
   # GET /books/1 or /books/1.json
