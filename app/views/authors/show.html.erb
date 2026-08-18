@@ -1,5 +1,12 @@
 <% content_for :title, @author.name %>
 
+<!-- Top Back Link -->
+<div class="mb-4">
+  <%= link_to books_path, class: "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors" do %>
+    <span class="mr-1">&larr;</span> Back to Authors
+  <% end %>
+</div>
+
 <% if notice.present? %>
   <div class="alert-notice max-w-2xl">
     <%= notice %>
@@ -12,6 +19,6 @@
 
 <div class="flex items-center space-x-4">
   <%= link_to "Edit this author", edit_author_path(@author), class: "btn-primary" %>
-  <%= link_to "Back to authors", authors_path, class: "btn-link" %>
+  <%# <%= link_to "Back to authors", authors_path, class: "btn-link" %>
   <%= button_to "Destroy this author", @author, method: :delete, class: "btn-danger", data: { turbo_confirm: "Are you sure?" } %>
 </div>
