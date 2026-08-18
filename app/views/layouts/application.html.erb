@@ -18,12 +18,56 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
+    <%# Tailwind CSS (CDN Setup) %>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <%# Custom Tailwind styles so that I don't die writing the same CSS statements a bajillion times %>
+    <style type="text/tailwindcss">
+      @layer components {
+        /* Labels and Typography */
+        .field-label {
+          @apply text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1;
+        }
+        .page-heading {
+          @apply text-2xl font-bold text-gray-900 mb-6;
+        }
+
+        /* Containers */
+        .card {
+          @apply bg-white border border-gray-200 rounded-lg p-6;
+        }
+        .table-container {
+          @apply overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm;
+        }
+
+        /* Form Inputs */
+        .form-input {
+          @apply w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 bg-white;
+        }
+
+        /* Buttons */
+        .btn-primary {
+          @apply bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-block text-center cursor-pointer;
+        }
+        .btn-link {
+          @apply text-slate-600 hover:text-slate-900 hover:underline text-sm;
+        }
+        .btn-danger {
+          @apply text-red-600 hover:underline text-sm cursor-pointer;
+        }
+      }
+    </style>
+
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <%= yield %>
+  <body class="bg-gray-50 text-gray-900 font-sans min-h-screen">
+    <%= render "layouts/navbar" %>
+
+    <main class="max-w-6xl mx-auto px-6 py-6">
+      <%= yield %>
+    </main>
   </body>
 </html>

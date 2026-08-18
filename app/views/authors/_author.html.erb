@@ -1,22 +1,24 @@
-<div id="<%= dom_id author %>">
-  <div>
-    <strong>Name:</strong>
-    <%= author.name %>
-  </div>
+<div id="<%= dom_id author %>" class="card max-w-2xl">
+  <div class="space-y-4">
+    <div>
+      <span class="field-label">Name</span>
+      <p class="text-lg font-medium text-gray-900"><%= author.name %></p>
+    </div>
 
-  <div>
-    <strong>Date of birth:</strong>
-    <%= author.date_of_birth %>
-  </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <span class="field-label">Date of Birth</span>
+        <p class="text-sm text-gray-800"><%= author.date_of_birth || "N/A" %></p>
+      </div>
+      <div>
+        <span class="field-label">Country of Origin</span>
+        <p class="text-sm text-gray-800"><%= author.country_of_origin || "N/A" %></p>
+      </div>
+    </div>
 
-  <div>
-    <strong>Country of origin:</strong>
-    <%= author.country_of_origin %>
+    <div>
+      <span class="field-label">Short Description</span>
+      <p class="text-sm text-gray-700 leading-relaxed"><%= author.short_description.presence || "No description provided." %></p>
+    </div>
   </div>
-
-  <div>
-    <strong>Short description:</strong>
-    <%= author.short_description %>
-  </div>
-
 </div>
