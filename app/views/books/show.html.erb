@@ -17,56 +17,8 @@
   <%= render @book %>
 </div>
 
-<!-- Embedded Reviews Section -->
-<div class="max-w-3xl mb-8">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="section-heading mb-0">Reviews (<%= @book.reviews.size %>)</h2>
-    <%= link_to "+ Add Review", new_book_review_path(@book), class: "btn-secondary text-xs py-1 px-3" %>
-  </div>
-
-  <% if @book.reviews.any? %>
-    <div class="table-container">
-      <table class="table-base">
-        <thead>
-          <tr>
-            <th class="th-cell">Rating</th>
-            <th class="th-cell">Title</th>
-            <th class="th-cell">Reviewer</th>
-            <th class="th-cell text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <% @book.reviews.each do |review| %>
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="td-cell font-semibold text-amber-700">
-                ★ <%= review.rating %>/5
-              </td>
-              <td class="td-cell">
-                <span class="font-medium text-gray-900 block">
-                  <%= review.title %>
-                </span>
-                <span class="text-xs text-gray-500">
-                  <%= truncate(review.content, length: 70) %>
-                </span>
-              </td>
-              <td class="td-cell text-xs text-gray-600">
-                <%= review.reviewer_name %>
-              </td>
-              <td class="td-cell text-right space-x-2 whitespace-nowrap">
-                <%= link_to "Edit", edit_book_review_path(@book, review), class: "btn-link" %>
-                <%= link_to "Delete", book_review_path(@book, review), class: "btn-danger", data: { turbo_method: :delete, turbo_confirm: "Delete this review?" } %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  <% else %>
-    <div class="card text-center py-6 text-sm text-gray-500">
-      No reviews yet for this book.
-    </div>
-  <% end %>
-</div>
+<!-- Embedded Reviews Partial -->
+<%= render "reviews/reviews_list", book: @book %>
 
 <!-- Embedded Sales History Section -->
 <% if @book.sales.any? %>

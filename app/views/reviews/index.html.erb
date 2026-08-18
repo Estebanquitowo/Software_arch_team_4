@@ -1,33 +1,11 @@
-<% content_for :title, "Reviews" %>
+<% content_for :title, "Reviews for #{@book.title}" %>
 
-<h1>Reviews for <%= @book.title %></h1>
+<div class="mb-4">
+  <%= link_to @book, class: "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors" do %>
+    <span class="mr-1">&larr;</span> Back to <%= @book.title %>
+  <% end %>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Rating</th>
-      <th>Title</th>
-      <th>Content</th>
-      <th>Reviewer</th>
-      <th colspan="2"></th>
-    </tr>
-  </thead>
+<h1 class="page-heading">Reviews for <%= @book.title %></h1>
 
-  <tbody>
-    <% @reviews.each do |review| %>
-      <tr>
-        <td><%= review.rating %></td>
-        <td><%= review.title %></td>
-        <td><%= review.content %></td>
-        <td><%= review.reviewer_name %></td>
-        <td><%= link_to "Edit", edit_book_review_path(@book, review) %></td>
-        <td><%= button_to "Destroy", book_review_path(@book, review), method: :delete %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<br>
-
-<%= link_to "New review", new_book_review_path(@book) %> |
-<%= link_to "Back to book", @book %>
+<%= render "reviews/reviews_list", book: @book %>
