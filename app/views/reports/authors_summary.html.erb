@@ -63,9 +63,13 @@
             </td>
             <td class="td-cell">
               <% if author["avg_score"] %>
-                <span class="badge-score">★ <%= author["avg_score"].round(2) %></span>
+                <span class="font-semibold text-amber-700">
+                  ★ <%= author["avg_score"].round(2) %>
+                </span>
               <% else %>
-                <span class="text-gray-400 text-xs italic">N/A</span>
+                <span class="text-gray-400 text-xs italic">
+                  N/A
+                </span>
               <% end %>
             </td>
             <td class="td-cell font-medium text-gray-800"><%= number_with_delimiter(author["total_sales"] || 0) %>
