@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: software-arch-team4
+
+# NOTE: secret.yaml is a TEMPLATE excluded from kustomize to avoid overwriting real secrets.
+# Create secret imperatively before applying kustomize:
+#   kubectl -n software-arch-team4 create secret generic app-secret \
+#     --from-literal=HARDCOVER_API_TOKEN="..." --from-literal=SECRET_KEY_BASE="$(openssl rand -hex 64)" \
+#     --dry-run=client -o yaml | kubectl apply -f -
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - mongodb-pvc.yaml
+  - mongodb-service.yaml
+  - mongodb-deployment.yaml
+  - web-service.yaml
+  - web-deployment.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: software-arch-team4

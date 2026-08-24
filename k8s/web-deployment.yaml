@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: software-arch-team4
+  labels:
+    app: web
+    app.kubernetes.io/name: software_arch_team_4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+        app.kubernetes.io/name: software_arch_team_4
+    spec:
+      containers:
+        - name: web
+          # Build locally then import to cluster (see bin/k8s-up):
+          #   docker build -f Dockerfile.dev -t software_arch_team_4:k8s .
+          #   k3d image import software_arch_team_4:k8s -c dev
+          # For production use Dockerfile.production with port 80 and RAILS_ENV=production (requires RAILS_MASTER_KEY in Secret).
+          image: software_arch_team_4:k8s
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          # Explicit env overrides example (kept minimal; ConfigMap/Secret is source of truth):
+          # env:
+          #   - name: MONGODB_URI
+          #     valueFrom:
+          #       configMapKeyRef: {name: app-config, key: MONGODB_URI}
+          readinessProbe:
+            httpGet:
+              path: /up
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

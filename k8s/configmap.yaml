@@ -1,0 +1,19 @@
+# Non-sensitive configuration. Do NOT put secrets here.
+# Used by web Deployment via envFrom.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: software-arch-team4
+  labels:
+    app.kubernetes.io/name: software_arch_team_4
+data:
+  RAILS_ENV: "development"
+  RAILS_LOG_LEVEL: "info"
+  PORT: "3000"
+  # Service DNS "mongodb" (from mongodb-service.yaml) must match host here.
+  MONGODB_URI: "mongodb://mongodb:27017/software_arch_team4_development?directConnection=true"
+  MONGODB_TEST_URI: "mongodb://mongodb:27017/software_arch_team4_test?directConnection=true"
+  # Optional tuning
+  RAILS_MAX_THREADS: "3"
+  WEB_CONCURRENCY: "1"

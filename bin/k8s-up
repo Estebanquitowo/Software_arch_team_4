@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1-command startup for k3d Kubernetes (k3d-only, no minikube)
+# Equivalent to `docker compose up --build` but for k8s:
+#   builds image -> creates k3d cluster if missing -> imports image -> creates secret -> applies manifests
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export PATH="$HOME/.local/bin:$PATH"
+
+CLUSTER="${K3D_CLUSTER:-dev}"
+IMAGE="${K8S_IMAGE:-software_arch_team_4:k8s}"
+NAMESPACE="software-arch-team4"
+
+echo "==> Checking prerequisites (docker, kubectl, k3d)..."
+command -v docker >/dev/null 2>&1 || { echo "error: docker not found"; exit 1; }
+command -v kubectl >/dev/null 2>&1 || { echo "error: kubectl not found (install: https://kubernetes.io/docs/tasks/tools/)"; exit 1; }
+command -v k3d >/dev/null 2>&1 || { echo "error: k3d not found (curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash)"; exit 1; }
+
+echo "==> Building image $IMAGE from Dockerfile.dev..."
+docker build -f "$ROOT/Dockerfile.dev" -t "$IMAGE" "$ROOT"
+
+if ! k3d cluster list 2>/dev/null | grep -qE "(^|[[:space:]])$CLUSTER([[:space:]]|$)"; then
+  echo "==> Creating k3d cluster $CLUSTER..."
+  k3d cluster create "$CLUSTER" --port "30080:80@loadbalancer" --port "30443:443@loadbalancer"
+else
+  echo "==> Cluster $CLUSTER already exists, reusing..."
+fi
+
+echo "==> Importing image $IMAGE into k3d cluster $CLUSTER..."
+k3d image import "$IMAGE" -c "$CLUSTER"
+
+echo "==> Ensuring namespace $NAMESPACE..."
+kubectl apply -f "$ROOT/k8s/namespace.yaml" >/dev/null
+
+# Create secret if missing (do not overwrite real one with dummy template)
+if ! kubectl -n "$NAMESPACE" get secret app-secret >/dev/null 2>&1; then
+  echo "==> Creating secret app-secret (SECRET_KEY_BASE + HARDCOVER_API_TOKEN)..."
+  HARDCOVER_TOKEN="$(grep -h HARDCOVER_API_TOKEN "$ROOT/.env" 2>/dev/null | cut -d= -f2- | tr -d '\"' | tr -d "'" || true)"
+  if [ -z "$HARDCOVER_TOKEN" ]; then
+    HARDCOVER_TOKEN="dummy_hardcover_token_for_k8s_test"
+  fi
+  SECRET_BASE="$(openssl rand -hex 64)"
+  kubectl -n "$NAMESPACE" create secret generic app-secret \
+    --from-literal=HARDCOVER_API_TOKEN="$HARDCOVER_TOKEN" \
+    --from-literal=SECRET_KEY_BASE="$SECRET_BASE"
+else
+  echo "==> Secret app-secret already exists, skipping creation (delete it first to regenerate)"
+fi
+
+echo "==> Applying manifests (kustomize)..."
+kubectl apply -k "$ROOT/k8s"
+
+echo "==> Waiting for deployments..."
+kubectl -n "$NAMESPACE" wait --for=condition=available deployment/mongodb --timeout=120s
+kubectl -n "$NAMESPACE" wait --for=condition=available deployment/web --timeout=120s
+
+echo ""
+echo "==> Ready! k8s stack is up (k3d-only)."
+kubectl -n "$NAMESPACE" get pods,svc,pvc
+echo ""
+echo "Access app via:"
+echo "  kubectl -n $NAMESPACE port-forward svc/web 3000:80"
+echo "  curl http://localhost:3000/up   # expect 200"
+echo ""
+echo "Rancher: k3d kubeconfig get $CLUSTER -> Import Existing Cluster in Rancher UI -> see namespace $NAMESPACE"
