@@ -1,6 +1,6 @@
-# Kubernetes — k3d + Rancher (k3d-only)
+# Kubernetes — k3d
 
-Isolated manifests in `k8s/` — does not modify `Dockerfile*`, `docker-compose.yml`, or app code. The manifests are standard Kubernetes resources. Rancher is an optional UI that imports the existing `k3d` cluster — see `## Rancher Integration` after Cleanup.
+The standard manifests in `k8s/` run Rails and MongoDB as independent Kubernetes workloads.
 
 ## Quick start — 1 command
 
@@ -45,7 +45,7 @@ Images are NOT hard-coded with config; ConfigMap/Secret inject at runtime.
 ```bash
 # From repository root
 docker build -f Dockerfile.dev -t software_arch_team_4:k8s .
-k3d cluster create dev --port "30080:80@loadbalancer" --port "30443:443@loadbalancer"  # skip if exists
+k3d cluster create dev  # skip if it already exists
 k3d image import software_arch_team_4:k8s -c dev
 
 # For production alternative (port 80, thruster):
@@ -107,7 +107,6 @@ kubectl -n software-arch-team4 port-forward svc/web 3000:80 &
 sleep 5
 curl -i http://localhost:3000/up          # expect HTTP/1.1 200
 curl -s http://localhost:3000/ | head -n 20
-# Rancher: import cluster (Rancher UI -> Import Existing -> apply cattle URL), then Workloads -> web -> Service web
 ```
 
 ### b) Pod recreated automatically after delete
@@ -144,39 +143,13 @@ kubectl -n software-arch-team4 exec deploy/mongodb -- mongosh --eval 'db.getSibl
 ## 6. Cleanup
 
 ```bash
-bin/k8s-down              # or kubectl delete -k k8s/
+bin/k8s-down              # stops workloads but preserves the PVC and Secret
 k3d cluster delete dev
 # Data is deleted with PVC. To keep data: kubectl delete deployment/mongodb --cascade=orphan
 ```
 
-## Rancher Integration
-
-Rancher is an optional management UI for the `k3d` cluster and is **not** started by `bin/k8s-up`. The repository does not include Rancher manifests. To use Rancher, start it manually and import the existing cluster.
-
-Rancher provides a graphical interface for the Kubernetes cluster. The workflow is:
-
-1. Start Rancher (once, if not already running): `docker run -d --privileged --restart=unless-stopped -p 443:443 --name rancher rancher/rancher` then open `https://localhost:443`
-2. Create/import the cluster: `k3d cluster create dev` (already done by `bin/k8s-up`) creates the K3s cluster. Retrieve the kubeconfig with `k3d kubeconfig get dev`, then in the Rancher UI select *Add Cluster → Import Existing* and apply the generated `kubectl apply -f <cattle-agent-url>` command against that kubeconfig.
-3. The `software-arch-team4` namespace, including Deployments (`web`, `mongodb`), Services, PVCs and logs, becomes visible in Rancher. The same objects are available via `kubectl`. All manifests in `k8s/` are standard Kubernetes and remain independent of Rancher.
-
-### 7. Stopping Rancher
-
-Rancher runs as a standalone Docker container (`rancher/rancher`) and is not removed by `bin/k8s-down` or `k3d cluster delete`. It continues running in the background on `https://localhost:443`.
-
-```bash
-# Check if Rancher is running (shows name like "rancher" or auto-generated "competent_aryabhata")
-docker ps --filter ancestor=rancher/rancher
-
-# Stop and remove (works for any name, 1-2 commands)
-docker rm -f $(docker ps -q --filter ancestor=rancher/rancher)
-# Or by explicit name (replace with the name from docker ps):
-# docker stop rancher && docker rm rancher
-# docker stop competent_aryabhata && docker rm competent_aryabhata
-```
-
 ## Notes
 
-- No modification to `Dockerfile*`, `docker-compose.yml`, `config/mongoid.yml`. Separation via `k8s/` only.
 - DRY: ConfigMap centralizes `MONGODB_URI`; both app and future jobs reference it. Secret centralizes credentials.
 - Production variant: change ConfigMap `RAILS_ENV=production PORT=80` and web Deployment `containerPort: 80`, probes port 80, and build from `Dockerfile.production`.
-- k3d StorageClass is `local-path` (Rancher provisioner `rancher.io/local-path`), not `standard`.
+- k3d StorageClass is `local-path`, not `standard`.

@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Stop k3d Kubernetes stack (keeps cluster by default)
+# Stop workloads while preserving the namespace, Secret and MongoDB PVC.
+# This is intentionally non-destructive for local development data.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
 NAMESPACE="software-arch-team4"
 CLUSTER="${K3D_CLUSTER:-dev}"
 
-echo "==> Deleting manifests..."
-kubectl delete -k "$ROOT/k8s" 2>/dev/null || kubectl -n "$NAMESPACE" delete deployment,svc,pvc,cm --all 2>/dev/null || true
+echo "==> Stopping workloads (PVC and Secret are preserved)..."
+kubectl -n "$NAMESPACE" delete deployment web mongodb --ignore-not-found
+kubectl -n "$NAMESPACE" delete service web mongodb --ignore-not-found
+kubectl -n "$NAMESPACE" delete configmap app-config --ignore-not-found
 
 if [ "${1:-}" = "--delete-cluster" ]; then
   echo "==> Deleting k3d cluster $CLUSTER..."
   k3d cluster delete "$CLUSTER"
 else
-  echo "==> Manifests deleted, cluster kept. To delete cluster: bin/k8s-down --delete-cluster  or  k3d cluster delete $CLUSTER"
+  echo "==> Workloads stopped; MongoDB PVC and Secret were kept."
+  echo "    To delete every local Kubernetes resource: k3d cluster delete $CLUSTER"
 fi

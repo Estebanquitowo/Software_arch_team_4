@@ -22,10 +22,15 @@ docker build -f "$ROOT/Dockerfile.dev" -t "$IMAGE" "$ROOT"
 
 if ! k3d cluster list 2>/dev/null | grep -qE "(^|[[:space:]])$CLUSTER([[:space:]]|$)"; then
   echo "==> Creating k3d cluster $CLUSTER..."
-  k3d cluster create "$CLUSTER" --port "30080:80@loadbalancer" --port "30443:443@loadbalancer"
+  # The web Service is intentionally ClusterIP; local access is provided by
+  # the documented `kubectl port-forward svc/web` command.
+  k3d cluster create "$CLUSTER"
 else
   echo "==> Cluster $CLUSTER already exists, reusing..."
 fi
+
+echo "==> Selecting kubectl context k3d-$CLUSTER..."
+kubectl config use-context "k3d-$CLUSTER" >/dev/null
 
 echo "==> Importing image $IMAGE into k3d cluster $CLUSTER..."
 k3d image import "$IMAGE" -c "$CLUSTER"
@@ -33,17 +38,19 @@ k3d image import "$IMAGE" -c "$CLUSTER"
 echo "==> Ensuring namespace $NAMESPACE..."
 kubectl apply -f "$ROOT/k8s/namespace.yaml" >/dev/null
 
-# Create secret if missing (do not overwrite real one with dummy template)
+# Create the runtime secret if missing.  Its values are intentionally not
+# versioned: `.env` is the optional local source for the Hardcover token.
 if ! kubectl -n "$NAMESPACE" get secret app-secret >/dev/null 2>&1; then
-  echo "==> Creating secret app-secret (SECRET_KEY_BASE + HARDCOVER_API_TOKEN)..."
+  echo "==> Creating secret app-secret..."
   HARDCOVER_TOKEN="$(grep -h HARDCOVER_API_TOKEN "$ROOT/.env" 2>/dev/null | cut -d= -f2- | tr -d '\"' | tr -d "'" || true)"
-  if [ -z "$HARDCOVER_TOKEN" ]; then
-    HARDCOVER_TOKEN="dummy_hardcover_token_for_k8s_test"
-  fi
   SECRET_BASE="$(openssl rand -hex 64)"
-  kubectl -n "$NAMESPACE" create secret generic app-secret \
-    --from-literal=HARDCOVER_API_TOKEN="$HARDCOVER_TOKEN" \
-    --from-literal=SECRET_KEY_BASE="$SECRET_BASE"
+  secret_args=(--from-literal=SECRET_KEY_BASE="$SECRET_BASE")
+  if [ -n "$HARDCOVER_TOKEN" ]; then
+    secret_args+=(--from-literal=HARDCOVER_API_TOKEN="$HARDCOVER_TOKEN")
+  else
+    echo "    HARDCOVER_API_TOKEN not set; the application will run, but Hardcover seeds require it."
+  fi
+  kubectl -n "$NAMESPACE" create secret generic app-secret "${secret_args[@]}"
 else
   echo "==> Secret app-secret already exists, skipping creation (delete it first to regenerate)"
 fi
@@ -62,5 +69,3 @@ echo ""
 echo "Access app via:"
 echo "  kubectl -n $NAMESPACE port-forward svc/web 3000:80"
 echo "  curl http://localhost:3000/up   # expect 200"
-echo ""
-echo "Rancher: k3d kubeconfig get $CLUSTER -> Import Existing Cluster in Rancher UI -> see namespace $NAMESPACE"

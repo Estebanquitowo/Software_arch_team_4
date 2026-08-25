@@ -15,9 +15,9 @@ Book review web application built with:
 
 ## Deployment Options
 
-This project supports two deployment methods that run the same application images (`Dockerfile.dev` / `Dockerfile.production`). Use one method at a time; both expose the application at `http://localhost:3000`.
+This project supports Docker Compose and Kubernetes (`k3d`) deployments. Use one method at a time; Docker Compose exposes Rails at `http://localhost:3000`, while Kubernetes is accessed through its documented Service port-forward.
 
-**Docker Compose** (`docker-compose.yml`): Starts `web` and `mongodb` as containers on the local machine. Suitable for simple local development. Container restarts are manual and data is stored in the Docker volume `mongodb_data`.
+**Docker Compose** (`docker-compose.yml`): Starts `web` and `mongodb` as separate containers on the local Compose network. MongoDB data is stored in the Docker volume `mongodb_data`.
 
 **Kubernetes** (`k8s/` manifests with `k3d`): Runs the same Docker images as Kubernetes workloads inside a lightweight `k3d` (K3s in Docker) cluster. The manifests provide:
 
@@ -25,7 +25,6 @@ This project supports two deployment methods that run the same application image
 *   **Service** — provides stable in-cluster DNS (`web`, `mongodb`) and exposes the application via `ClusterIP` with `port-forward`
 *   **PersistentVolumeClaim** — stores MongoDB data on `local-path` storage so data persists across pod restarts
 *   **ConfigMap / Secret** — injects configuration (`MONGODB_URI`, `RAILS_ENV`) and credentials (`HARDCOVER_API_TOKEN`, `SECRET_KEY_BASE`) at runtime without baking them into the image
-*   **Rancher** — optional management UI for the existing `k3d` cluster. No Rancher manifests are included; import the cluster with `k3d kubeconfig get dev` via Rancher's *Import Existing* workflow. See `k8s/README.md` for details.
 
 ## Local Development — Option A: Docker Compose (simplest)
 
@@ -60,7 +59,7 @@ This project supports two deployment methods that run the same application image
     1. Copy the text block starting with the `'Bearer'` line, without including it; this is the API token.
     1. Copy `.env.example`, paste it on root, rename it to `.env`, and paste the API token as the value for the `HARDCOVER_API_TOKEN` key.
 
-## Local Development — Option B: Kubernetes with k3d + Rancher (1-2 commands)
+## Local Development — Option B: Kubernetes with k3d
 
 Isolated manifests in `k8s/` — does not modify `Dockerfile*`, `docker-compose.yml`, or app code. See `k8s/README.md` for full manual details.
 
@@ -88,7 +87,7 @@ Stop the port redirection: `Ctrl+C` in the port-forward terminal (or `kill %1` /
 
 Stop / cleanup:
 ```sh
-bin/k8s-down          # deletes manifests (keeps cluster)
+bin/k8s-down          # stops workloads but preserves the PVC and Secret
 k3d cluster delete dev # full cleanup
 ```
 
@@ -96,7 +95,7 @@ k3d cluster delete dev # full cleanup
 ```sh
 # From repository root
 docker build -f Dockerfile.dev -t software_arch_team_4:k8s .
-k3d cluster create dev --port "30080:80@loadbalancer"  # skip if already exists
+k3d cluster create dev  # skip if already exists
 k3d image import software_arch_team_4:k8s -c dev
 ```
 
@@ -139,40 +138,8 @@ kubectl -n software-arch-team4 exec deploy/mongodb -- mongosh --eval 'db.getSibl
 
 ### 5. Cleanup
 ```sh
-bin/k8s-down             # or kubectl delete -k k8s/
+bin/k8s-down             # stops workloads but preserves the PVC and Secret
 k3d cluster delete dev
-```
-
-### 6. Rancher Integration
-
-Rancher is an optional management UI for the `k3d` cluster and is **not** started by `bin/k8s-up`. `bin/k8s-up` only creates the `k3d` cluster, builds/imports the image, and applies the `k8s/` manifests. To use Rancher, start it manually as a standalone Docker container and import the existing cluster.
-
-The repository does not include Rancher manifests. Rancher imports the existing cluster and visualizes the Kubernetes objects defined in `k8s/` (`Deployment/web`, `Service/web`, `PVC/mongodb-data`). The cluster can be verified either through Rancher or directly with `kubectl`.
-
-```sh
-# Start Rancher (once, if not already running)
-docker run -d --privileged --restart=unless-stopped -p 443:443 --name rancher rancher/rancher
-
-k3d kubeconfig get dev > /tmp/kubeconfig-dev.yaml
-# Rancher UI → https://localhost:443 (set admin password)
-# → Add Cluster → Import Existing → copy the generated kubectl apply URL
-# → run it against the kubeconfig: KUBECONFIG=/tmp/kubeconfig-dev.yaml kubectl apply -f <import-url>
-# → the namespace software-arch-team4 with all pods, services and PVCs becomes visible in Rancher
-```
-
-### 7. Stopping Rancher
-
-Rancher runs as a standalone Docker container (`rancher/rancher`) and is not removed by `bin/k8s-down` or `k3d cluster delete`. It continues running in the background on `https://localhost:443`.
-
-```sh
-# Check if Rancher is running (shows name like "rancher" or auto-generated "competent_aryabhata")
-docker ps --filter ancestor=rancher/rancher
-
-# Stop and remove (works for any name, 1-2 commands)
-docker rm -f $(docker ps -q --filter ancestor=rancher/rancher)
-# Or by explicit name (replace with the name from docker ps):
-# docker stop rancher && docker rm rancher
-# docker stop competent_aryabhata && docker rm competent_aryabhata
 ```
 
 ## Workflow & Development Commands

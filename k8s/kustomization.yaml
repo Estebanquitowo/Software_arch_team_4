@@ -17,5 +17,9 @@ resources:
   - web-service.yaml
   - web-deployment.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: software-arch-team4
+# Keep the label in the workload and Service selectors, using the current
+# Kustomize syntax (the former `commonLabels` field is deprecated).
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: software-arch-team4
+    includeSelectors: true

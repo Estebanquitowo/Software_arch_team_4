@@ -29,6 +29,8 @@ RUN bundle install
 # Copy application source code
 COPY . .
 
+ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+
 # Expose Rails default server port
 EXPOSE 3000
 

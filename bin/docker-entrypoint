@@ -1,3 +1,15 @@
 #!/bin/bash -e
 
+# The development container bind-mounts the application directory.  A PID file
+# left by a previous Rails server must not prevent the replacement container
+# from starting.
+if [ "${1:-}" = "bin/rails" ] && [ "${2:-}" = "server" ]; then
+  rm -f /rails/tmp/pids/server.pid
+
+  # `bundle_data` is intentionally persisted by Docker Compose.  It can be
+  # older than the image after Gemfile.lock changes, so make `docker compose
+  # up` self-contained instead of failing with Bundler::GemNotFound.
+  bundle check >/dev/null 2>&1 || bundle install
+fi
+
 exec "${@}"
