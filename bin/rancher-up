@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Start Rancher Manager locally. It manages the existing k3d cluster; it does
+# not replace the Rails/MongoDB manifests in k8s/.
+NAME="${RANCHER_CONTAINER_NAME:-software_arch_rancher}"
+PORT="${RANCHER_PORT:-8443}"
+IMAGE="${RANCHER_IMAGE:-rancher/rancher:stable}"
+
+command -v docker >/dev/null 2>&1 || { echo "error: docker not found"; exit 1; }
+
+if docker ps --format '{{.Names}}' | grep -Fxq "$NAME"; then
+  echo "==> Rancher Manager is already running: https://localhost:$PORT"
+elif docker ps -a --format '{{.Names}}' | grep -Fxq "$NAME"; then
+  echo "==> Starting existing Rancher Manager container..."
+  docker start "$NAME" >/dev/null
+else
+  echo "==> Starting Rancher Manager on https://localhost:$PORT ..."
+  docker run -d --privileged --restart=unless-stopped \
+    --name "$NAME" \
+    -p "$PORT:443" \
+    "$IMAGE" >/dev/null
+fi
+
+echo "==> Open https://localhost:$PORT and complete Rancher's initial setup."
+echo "    Then import the existing k3d cluster and run bin/rancher-import <registration-url>."

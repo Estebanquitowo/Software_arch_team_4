@@ -148,6 +148,20 @@ k3d cluster delete dev
 # Data is deleted with PVC. To keep data: kubectl delete deployment/mongodb --cascade=orphan
 ```
 
+## 7. Rancher Manager (optional)
+
+This project uses **Rancher Manager**, not Rancher Desktop. Rancher Manager runs separately as an administration UI for the already-created `k3d-dev` cluster; it does not replace the Kubernetes manifests.
+
+```bash
+# From repository root
+bin/rancher-up
+# Open https://localhost:8443 and finish the initial setup.
+# In the UI choose Import Existing, copy the generated registration URL, then:
+bin/rancher-import <registration-url-from-rancher>
+```
+
+The import action applies Rancher's generated registration manifest explicitly to context `k3d-dev`. Once the Rancher agent connects, the UI exposes the cluster's nodes and the `software-arch-team4` workloads, Services, PVC, ConfigMap and Secret.
+
 ## Notes
 
 - DRY: ConfigMap centralizes `MONGODB_URI`; both app and future jobs reference it. Secret centralizes credentials.

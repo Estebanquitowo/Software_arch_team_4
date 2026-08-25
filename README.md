@@ -142,6 +142,20 @@ bin/k8s-down             # stops workloads but preserves the PVC and Secret
 k3d cluster delete dev
 ```
 
+### 6. Rancher Manager (optional cluster administration)
+
+Rancher Manager is an administration layer for the existing `k3d` cluster; it does not replace the manifests in `k8s/`. It is distinct from Rancher Desktop.
+
+```sh
+bin/rancher-up
+# Open https://localhost:8443, accept the local certificate warning, and
+# complete Rancher's initial setup.
+# In Rancher: Create/Import Existing cluster -> copy its registration URL.
+bin/rancher-import <registration-url-from-rancher>
+```
+
+After the registration manifest is applied, Rancher shows the `k3d-dev` node and the `software-arch-team4` namespace, including its Deployments, Pods, Services, PVC, ConfigMap and Secret. Rancher startup is independent of `bin/k8s-down`; stop it with `docker stop software_arch_rancher` when it is no longer needed.
+
 ## Workflow & Development Commands
 
 Development can be done inside the Docker Containers. Effects of Rails and database commands ran inside them should persist even after containers are down. Commands ran this way must be prefixed with the `docker compose exec` string, as in all following examples.

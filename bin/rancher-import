@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Rancher generates a one-time registration URL in its UI for an imported
+# cluster. Apply that URL to the k3d context, never to an arbitrary context.
+CLUSTER="${K3D_CLUSTER:-dev}"
+REGISTRATION_URL="${1:-}"
+
+if [ -z "$REGISTRATION_URL" ]; then
+  echo "usage: bin/rancher-import <registration-url-from-rancher-ui>"
+  exit 1
+fi
+
+command -v kubectl >/dev/null 2>&1 || { echo "error: kubectl not found"; exit 1; }
+command -v k3d >/dev/null 2>&1 || { echo "error: k3d not found"; exit 1; }
+k3d cluster list | grep -qE "(^|[[:space:]])$CLUSTER([[:space:]]|$)" || {
+  echo "error: k3d cluster $CLUSTER does not exist; run bin/k8s-up first"
+  exit 1
+}
+
+kubectl config use-context "k3d-$CLUSTER" >/dev/null
+echo "==> Applying Rancher registration manifest to k3d-$CLUSTER..."
+kubectl apply -f "$REGISTRATION_URL"
