@@ -75,7 +75,7 @@ This project supports two deployment methods that run the same application image
     docker compose exec web bin/rails db:seed
     ```
 
-## Local Development — Option B: Kubernetes with k3d + Rancher (1-2 commands)
+### Option B: Kubernetes with k3d
 
 Isolated manifests in `k8s/` — does not modify `Dockerfile*`, `docker-compose.yml`, or app code. See `k8s/README.md` for full manual details.
 
