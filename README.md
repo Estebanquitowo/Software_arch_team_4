@@ -111,14 +111,22 @@ Isolated manifests in `k8s/` — does not modify `Dockerfile*`, `docker-compose.
 ### Verify Cluster (required by Assignment 2)
 ```sh
 # a) Reachable through Service
-kubectl -n software-arch-team4 port-forward svc/web 3000:80 &
-curl -i http://localhost:3000/up   # expect 200
+kubectl -n software-arch-team4 port-forward svc/web 3000:80 
+# In another terminal, do the following command
+curl -i http://localhost:3000/up   # should throw 200
+```
 
+```sh
 # b) Self-healing: pod recreated automatically
 kubectl -n software-arch-team4 delete pod -l app=web
-kubectl -n software-arch-team4 get pods   # new pod Running
-curl -i http://localhost:3000/up          # still 200
+kubectl -n software-arch-team4 get pods   # wait for new web pod to be READY
+# Repeat "a)" steps:
+kubectl -n software-arch-team4 port-forward svc/web 3000:80 
+# In another terminal, do the following command
+curl -i http://localhost:3000/up   # should throw 200
+```
 
+```sh
 # c) PVC survives restart
 kubectl -n software-arch-team4 exec deploy/mongodb -- mongosh --eval 'db.getSiblingDB("software_arch_team4_development").test_persistence.insertOne({check:"before-restart"})'
 kubectl -n software-arch-team4 delete pod -l app=mongodb
