@@ -10,6 +10,24 @@ services:
     environment:
       MONGO_INITDB_DATABASE: software_arch_team4_development
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    container_name: software_arch_meilisearch
+    restart: always
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    environment:
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:7700/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   web:
     build:
       context: .
@@ -26,14 +44,17 @@ services:
       MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
       MONGODB_TEST_URI: mongodb://mongodb:27017/software_arch_team4_test
       HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN:-}
-      CACHE_ENABLED: ${CACHE_ENABLED:-false}
-      REDIS_URL: ${REDIS_URL:-}
-      SEARCH_ENABLED: ${SEARCH_ENABLED:-false}
-      MEILISEARCH_URL: ${MEILISEARCH_URL:-}
-      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-}
+      CACHE_ENABLED: "false"
+      SEARCH_ENABLED: "true"
+      MEILISEARCH_URL: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_started
+      meilisearch:
+        condition: service_healthy
 
 volumes:
   mongodb_data:
   bundle_data:
+  meili_data:

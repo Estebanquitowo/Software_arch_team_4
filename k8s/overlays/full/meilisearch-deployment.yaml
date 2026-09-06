@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meilisearch
+  namespace: software-arch-team4
+  labels:
+    app: meilisearch
+    app.kubernetes.io/name: software_arch_team_4
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # Avoid multi-attach conflict on PVC
+  selector:
+    matchLabels:
+      app: meilisearch
+  template:
+    metadata:
+      labels:
+        app: meilisearch
+        app.kubernetes.io/name: software_arch_team_4
+    spec:
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:v1.12
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7700
+              name: meilisearch
+          env:
+            - name: MEILI_ENV
+              value: development
+            - name: MEILI_NO_ANALYTICS
+              value: "true"
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: search-config
+                  key: MEILISEARCH_API_KEY
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: meili-data
+              mountPath: /meili_data
+      volumes:
+        - name: meili-data
+          persistentVolumeClaim:
+            claimName: meili-data

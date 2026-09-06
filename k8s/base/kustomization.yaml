@@ -17,5 +17,7 @@ resources:
   - web-service.yaml
   - web-deployment.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: software-arch-team4
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: software-arch-team4
+    includeSelectors: false

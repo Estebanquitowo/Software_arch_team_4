@@ -47,9 +47,55 @@ This project supports two deployment methods that run the same application image
 *   **ConfigMap / Secret** — injects configuration (`MONGODB_URI`, `RAILS_ENV`) and credentials (`HARDCOVER_API_TOKEN`, `SECRET_KEY_BASE`) at runtime without baking them into the image
 *   **Rancher** — optional management UI for the existing `k3d` cluster. No Rancher manifests are included; import the cluster with `k3d kubeconfig get dev` via Rancher's *Import Existing* workflow. See `k8s/README.md` for details.
 
+  Like Docker Compose, Kubernetes provides **4 variants** via kustomize base + overlays (`bin/k8s-up [base|cache|search|full]`) to enable optional Redis caching and Meilisearch search.
+
 ## Local Development and Deployment 
 
-### Option A: Docker Compose
+### Option A: Docker Compose (4 variants — app works with or without cache/search)
+
+The app implements **optional** components via Strategy pattern:
+
+* **Cache:** `Redis` (`redis:7-alpine`) with `Rails.cache = :redis_cache_store`. If `REDIS_URL` unreachable/missing → gracefully falls back to `:memory_store` (`CacheService.fetch` rescues and yields directly, so requests never 500).
+* **Search:** `Meilisearch` (`getmeili/meilisearch:v1.12`) with `meilisearch-rails`. If `MEILISEARCH_URL` unreachable/missing → gracefully falls back to native MongoDB regex/`$text` search (`SearchService`).
+
+4 standalone Compose files cover every combination:
+
+| File | Services | Env |
+|------|----------|-----|
+| `docker-compose.yml` | `web` + `mongodb` | `CACHE_ENABLED=false` `SEARCH_ENABLED=false` — **app as-is** |
+| `docker-compose.cache.yml` | + `redis` | `CACHE_ENABLED=true` `REDIS_URL=redis://redis:6379/0` |
+| `docker-compose.search.yml` | + `meilisearch` | `SEARCH_ENABLED=true` `MEILISEARCH_URL=http://meilisearch:7700` |
+| `docker-compose.full.yml` | + `redis` + `meilisearch` | both enabled |
+
+Usage (pick one — all expose `http://localhost:3000`):
+
+```sh
+# 1) App as-is (no external deps)
+docker compose -f docker-compose.yml up -d --build
+
+# 2) With cache only (Redis)
+docker compose -f docker-compose.cache.yml up -d --build
+
+# 3) With search only (Meilisearch)
+docker compose -f docker-compose.search.yml up -d --build
+
+# 4) With cache + search
+docker compose -f docker-compose.full.yml up -d --build
+```
+
+The original `docker compose up -d --build` (defaults to `docker-compose.yml`) still works — `CACHE_ENABLED`/`SEARCH_ENABLED` default to `false` via `${VAR:-false}`.
+
+Common steps after `up`:
+
+```sh
+docker compose -f <chosen-file> ps
+docker compose -f <chosen-file> exec web bin/rails db:seed   # also triggers Meilisearch reindex if enabled + clears cache
+# optional explicit reindex/clear:
+docker compose -f <chosen-file> exec web bin/rails search:reindex
+docker compose -f <chosen-file> exec web bin/rails cache:clear
+```
+
+> **Note:** the search/full compose files use `http://127.0.0.1:7700/health` for the Meilisearch healthcheck (not `localhost`) because `wget` resolves `localhost` to IPv6 `[::1]`, which Meilisearch doesn't listen on — that made `up` fail with "dependency ... is unhealthy".
 
 1. Clone the repository and enter the directory:
     ```sh
@@ -57,9 +103,9 @@ This project supports two deployment methods that run the same application image
     cd Software_arch_team_4
     ```
 
-1. Start the application stack:
+1. Start the application stack (example: full variant):
     ```sh
-    docker compose up -d --build
+    docker compose -f docker-compose.full.yml up -d --build
     ```
 
     The web server (service="web") will be accessible at http://localhost:3000. \
@@ -67,22 +113,35 @@ This project supports two deployment methods that run the same application image
 
 1. Verify containers are running:
     ```sh
-    docker compose ps
+    docker compose -f docker-compose.full.yml ps
     ```
 
 1. If running the app for the first time, populate it with:
     ```sh
-    docker compose exec web bin/rails db:seed
+    docker compose -f docker-compose.full.yml exec web bin/rails db:seed
     ```
 
 ### Option B: Kubernetes with k3d
 
-Isolated manifests in `k8s/` — does not modify `Dockerfile*`, `docker-compose.yml`, or app code. See `k8s/README.md` for full manual details.
+The app implements **optional** cache (Redis) and search (Meilisearch) components via its Strategy pattern. Just like Docker Compose, Kubernetes offers **4 standalone variants** using kustomize overlays — all share the same `base` (web + mongodb):
 
-1. Generate the k3d cluster:
+| Command | Variant | Extra services | Env |
+|---------|---------|----------------|-----|
+| `bin/k8s-up base` (default) | as-is | — | `CACHE_ENABLED=false` `SEARCH_ENABLED=false` |
+| `bin/k8s-up cache` | + Redis | `redis` | `CACHE_ENABLED=true` |
+| `bin/k8s-up search` | + Meilisearch | `meilisearch` | `SEARCH_ENABLED=true` |
+| `bin/k8s-up full` | + Redis + Meilisearch | `redis`, `meilisearch` | both enabled |
+
+Isolated manifests in `k8s/` (base + overlays) — does not modify `Dockerfile*`, `docker-compose.yml`, or app code. See `k8s/README.md` for full manual details.
+
+1. Generate the k3d cluster (default `base` variant; pass `cache`, `search`, or `full` for the others):
     ```sh
-    bin/k8s-up   # builds image, creates k3d cluster if needed, imports image, creates secrets, applies manifests
+    bin/k8s-up            # as-is: web + mongodb
+    # bin/k8s-up cache    # + Redis
+    # bin/k8s-up search   # + Meilisearch
+    # bin/k8s-up full     # + Redis + Meilisearch
     ```
+    This builds the image, creates the k3d cluster if needed, imports the image, creates secrets, applies the overlay manifests, and **runs `db:seed` automatically** (which reindexes Meilisearch and clears cache when those features are enabled).
 
 1. View the application (requires an extra terminal):
     ```sh
@@ -91,21 +150,13 @@ Isolated manifests in `k8s/` — does not modify `Dockerfile*`, `docker-compose.
     # Then open http://localhost:3000 or: curl -i http://localhost:3000/up  # expect 200
     ```
 
-1. If running via k3d for the first time, populate the database with:
-    ```sh
-    # Copy web pod's name
-    kubectl -n software-arch-team4 get pods
-
-    # Seed database via web app's db/seeds.rb
-    kubectl -n software-arch-team4 exec -it <web-pod-name> -- bin/rails db:seed # Paste web pod's name inside <web-pod-name>
-    ```
-
 1. Stop the port redirection: `Ctrl+C` in the port-forward terminal (or `kill %1` / `jobs` then `kill` if run with `&`).
 
 1. Stop / cleanup the cluster:
     ```sh
-    bin/k8s-down           # deletes manifests (keeps cluster)
-    k3d cluster delete dev # full cleanup
+    bin/k8s-down            # deletes manifests (match the overlay you started, keeps cluster)
+    bin/k8s-down full       # example: delete from the full overlay
+    k3d cluster delete dev  # full cleanup
     ```
 
 ### Verify Cluster (required by Assignment 2)
@@ -133,6 +184,109 @@ kubectl -n software-arch-team4 delete pod -l app=mongodb
 kubectl -n software-arch-team4 wait --for=condition=available deployment/mongodb --timeout=120s
 kubectl -n software-arch-team4 exec deploy/mongodb -- mongosh --eval 'db.getSiblingDB("software_arch_team4_development").test_persistence.findOne({check:"before-restart"})' # still exists
 ```
+
+## Verify Caching & Search (required by Assignment 3)
+
+The target configuration for these correctness tests is the **full** variant (`web` + `mongodb` + `redis` + `meilisearch`). `db:seed` now also **clears the cache** and **reindexes Meilisearch** automatically when those features are enabled.
+
+```sh
+# 1) Bring up the full stack (code is volume-mounted, so changes are live)
+docker compose -f docker-compose.full.yml up -d --build
+
+# 2) Seed the database (also clears cache + reindexes when available)
+docker compose -f docker-compose.full.yml exec web bin/rails db:seed
+
+# 3) Optional: start cold, so the first request below is a real cache miss
+docker compose -f docker-compose.full.yml exec web bin/rails cache:clear
+```
+
+### a) Reading an item caches/indexes it
+
+Hit every cached endpoint. The first request is a cache **miss**: it reads MongoDB and fills the cache (`CacheService.fetch`). Repeat a request right after `cache:clear` and the second call is served from the cache.
+
+```sh
+curl -s "http://localhost:3000/reports/authors_summary"   >/dev/null
+curl -s "http://localhost:3000/reports/top_rated_books"   >/dev/null
+curl -s "http://localhost:3000/reports/top_selling_books" >/dev/null
+curl -s "http://localhost:3000/books"                     >/dev/null
+curl -s "http://localhost:3000/search?q=war"              >/dev/null
+```
+
+Proof the cache was filled (Redis keys now exist):
+
+```sh
+docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'reports/*'
+docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'books/*'
+docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'search/*'
+```
+
+Proof books are indexed (Meilisearch document count == `Book.count`):
+
+```sh
+curl -s "http://localhost:7700/indexes/books/stats" -H "Authorization: Bearer dev-master-key"
+```
+
+### b) Add / edit / delete items through the app
+
+Through the UI at `http://localhost:3000`:
+
+* Add/edit/delete a **review** — `/books/<id>` → *New Review* (also reachable at `/books/<id>/reviews`).
+* Add/edit/delete a **sale** — `/books/<id>` → *New Sale*.
+* Edit or delete a **book** — `/books/<id>/edit`.
+* Edit an **author** — `/authors/<id>/edit`, then reload `/reports/authors_summary` (sorted by name).
+
+Or script the mutation with `rails runner` (print the book id/title to use below):
+
+```sh
+docker compose -f docker-compose.full.yml exec web bin/rails runner '
+  b = Book.first
+  puts "id=#{b.id} title=#{b.title}"
+  b.reviews.create!(rating: 5, title: "QA Test", content: "zephyrx", reviewer_name: "QA")
+  puts "avg_score=" + b.reload.avg_score.to_s
+'
+```
+
+### c) A later read returns the updated value and search reflects the change
+
+**Cache invalidation** — the mutation above triggered `Book#after_save` → `delete_matched("reports/*", "books/*", "search/*")`, so the affected keys are gone immediately:
+
+```sh
+docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'reports/*'   # emptied for that resource
+```
+
+**Read returns fresh data** — the search results table shows the recomputed `avg_score`:
+
+```sh
+curl -s "http://localhost:3000/search?q=zephyrx"        # matched via the indexed review text
+curl -s "http://localhost:3000/reports/top_rated_books" # recomputed after invalidation
+```
+
+**Index is synchronized** — editing the book's summary is searchable right away (`meilisearch synchronous: true`):
+
+```sh
+docker compose -f docker-compose.full.yml exec web bin/rails runner '
+  b = Book.first
+  b.update!(summary: b.summary + " xanthous")
+'
+curl -s "http://localhost:3000/search?q=xanthous"   # returns the book (new summary indexed)
+```
+
+**Deleting removes the index entry and the cached value**:
+
+```sh
+docker compose -f docker-compose.full.yml exec web bin/rails runner '
+  r = Book.first.reviews.find_by(content: "zephyrx"); r.destroy!
+'
+curl -s "http://localhost:3000/search?q=zephyrx"   # no results anymore
+docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'reports/*'   # invalidated again
+```
+
+### d) Stale data
+
+* **None expected.** Every mutation invalidates the cache: `Review`/`Sale` callbacks recompute `avg_score`/`number_of_sales` and re-save the book, which fires `Book#after_save` → `CacheService.delete_matched("reports/*", "books/*", "search/*")`. Editing a `Book` or `Author` directly invalidates `reports/*` (author summary). Meilisearch is `synchronous: true`, so the index is updated on the same save that changes the data.
+* **Accepted / justified cases.** The per-key TTL (5–10 min) is only a safety net, never the invalidation mechanism. If Redis is unreachable at boot the app falls back to `:memory_store` (documented as bug #8 in `k8s/README.md`), and if Meilisearch is down search falls back to MongoDB regex — in both cases the app stays functional and consistent with MongoDB on the next read.
+
+The same tests run on the Kubernetes stack: `bin/k8s-up full`, port-forward `svc/web 3000:80` (service port 80) for the `curl` steps, and use `kubectl -n software-arch-team4 exec deploy/web -- bin/rails runner '<code>'` instead of `docker compose ... exec web`.
 
 ## Rancher Integration
 

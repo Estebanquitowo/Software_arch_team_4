@@ -2,16 +2,34 @@
 set -euo pipefail
 
 # Stop k3d Kubernetes stack (keeps cluster by default)
+# Usage: bin/k8s-down [overlay] [--delete-cluster]
+#   overlay: base (default) | cache | search | full  (must match bin/k8s-up)
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
 NAMESPACE="software-arch-team4"
 CLUSTER="${K3D_CLUSTER:-dev}"
 
-echo "==> Deleting manifests..."
-kubectl delete -k "$ROOT/k8s" 2>/dev/null || kubectl -n "$NAMESPACE" delete deployment,svc,pvc,cm --all 2>/dev/null || true
+OVERLAY="base"
+DELETE_CLUSTER=""
+for arg in "$@"; do
+  case "$arg" in
+    --delete-cluster) DELETE_CLUSTER="1" ;;
+    base|cache|search|full) OVERLAY="$arg" ;;
+    *) echo "warning: ignoring unknown arg '$arg' (use: base|cache|search|full [--delete-cluster])" ;;
+  esac
+done
 
-if [ "${1:-}" = "--delete-cluster" ]; then
+if [ "$OVERLAY" = "base" ]; then
+  KUSTOMIZE_DIR="$ROOT/k8s/base"
+else
+  KUSTOMIZE_DIR="$ROOT/k8s/overlays/$OVERLAY"
+fi
+
+echo "==> Deleting manifests for overlay=$OVERLAY..."
+kubectl delete -k "$KUSTOMIZE_DIR" 2>/dev/null || kubectl -n "$NAMESPACE" delete deployment,svc,pvc,cm --all 2>/dev/null || true
+
+if [ -n "$DELETE_CLUSTER" ]; then
   echo "==> Deleting k3d cluster $CLUSTER..."
   k3d cluster delete "$CLUSTER"
 else

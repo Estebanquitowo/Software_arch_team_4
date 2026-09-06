@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: meilisearch
+  namespace: software-arch-team4
+  labels:
+    app: meilisearch
+    app.kubernetes.io/name: software_arch_team_4
+spec:
+  selector:
+    app: meilisearch
+  ports:
+    - name: meilisearch
+      port: 7700
+      targetPort: 7700
+      protocol: TCP
+  type: ClusterIP

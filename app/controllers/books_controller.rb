@@ -2,13 +2,17 @@ class BooksController < ApplicationController
   PAGE_SIZE = 20
   before_action :set_book, only: %i[ show edit update destroy ]
 
-  # GET /books or /books.json
   def index
     @page = [ Integer(params[:page] || 1, exception: false) || 1, 1 ].max
-    @total = Book.count
+    cache_key = "books/index/page/#{@page}"
+    result = CacheService.fetch(cache_key, expires_in: CacheService::CACHE_TTL[:books_index]) do
+      total = Book.count
+      books = Book.order_by(title: :asc).skip((@page - 1) * PAGE_SIZE).limit(PAGE_SIZE).to_a
+      { total: total, books: books }
+    end
+    @total = result[:total]
     @total_pages = [ (@total / PAGE_SIZE.to_f).ceil, 1 ].max
-
-    @books = Book.order_by(title: :asc).skip((@page - 1) * PAGE_SIZE).limit(PAGE_SIZE).to_a
+    @books = result[:books]
   end
 
   # GET /books/1 or /books/1.json

@@ -1,0 +1,10 @@
+# Non-sensitive search configuration for the search/full overlays.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: search-config
+  namespace: software-arch-team4
+  labels:
+    app.kubernetes.io/name: software_arch_team_4
+data:
+  MEILISEARCH_API_KEY: "dev-master-key"
