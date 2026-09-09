@@ -3,6 +3,7 @@ module CacheService
     books_index: 5.minutes,
     authors_summary: 10.minutes,
     top_rated: 10.minutes,
+    average_review_score: 10.minutes,
     top_selling: 10.minutes,
     search: 2.minutes
   }.freeze

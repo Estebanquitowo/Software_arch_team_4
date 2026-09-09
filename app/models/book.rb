@@ -53,6 +53,18 @@ class Book
     BookStatisticsRecalculator.recalculate_average(id)
   end
 
+  def average_review_score
+    CacheService.fetch(Book.average_review_score_cache_key(id), expires_in: CacheService::CACHE_TTL[:average_review_score]) do
+      # Read only the persisted statistic, never this instance's stale attributes
+      # or embedded reviews. A missing score (including no reviews) remains nil.
+      Book.where(id: id).limit(1).pluck(:avg_score).first
+    end
+  end
+
+  def self.average_review_score_cache_key(book_id)
+    "books/#{book_id}/average_review_score"
+  end
+
   private
 
   def invalidate_derived_cache

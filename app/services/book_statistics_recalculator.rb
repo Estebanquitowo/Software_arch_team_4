@@ -49,7 +49,8 @@ class BookStatisticsRecalculator
 
     # Raw driver writes bypass Book callbacks. Publish exactly once, including
     # text-only review edits whose unchanged average still affects cached views.
-    CacheInvalidationService.call
+    keys = field == "avg_score" ? [ Book.average_review_score_cache_key(book_id) ] : []
+    CacheInvalidationService.call(keys: keys)
 
     if Book.method_defined?(:ms_index!)
       # Never save/reload the caller's stale parent: it may hold pending edits.

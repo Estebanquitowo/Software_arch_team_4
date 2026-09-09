@@ -8,7 +8,7 @@ database = ENV.fetch("REGRESSION_DATABASE")
 raise "Unsafe database" unless database.match?(/\Aassignment3_regression_[0-9a-f]+_test\z/)
 proxy = nil
 search = nil
-if %w[redis_boot redis_invalidation reload].include?(name)
+if %w[redis_boot redis_invalidation reload average_redis].include?(name)
   proxy = NetworkFaults::RedisProxy.new(ENV.fetch("REGRESSION_REDIS_URL"), online: name != "redis_boot")
   ENV["CACHE_ENABLED"] = "true"
   ENV["REDIS_URL"] = proxy.url

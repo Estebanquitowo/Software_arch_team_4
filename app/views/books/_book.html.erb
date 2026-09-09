@@ -30,9 +30,10 @@
       <div>
         <span class="field-label">Avg Rating</span>
         <p class="text-sm text-gray-800">
-          <% if book.avg_score.present? %>
+          <% average_score = book.average_review_score %>
+          <% if average_score.present? %>
             <span class="font-semibold text-amber-700">
-              ★ <%= sprintf('%.2f', book.avg_score) %> / 5
+              ★ <%= sprintf('%.2f', average_score) %> / 5
             </span>
           <% else %>  
             <span class="text-gray-400 text-xs italic">Unrated</span>
