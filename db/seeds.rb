@@ -8,12 +8,8 @@ AuthorDetailsSeeder.call
 ReviewsSeeder.call
 SalesSeeder.call
 
-begin
-  Rails.cache.clear rescue nil if defined?(Rails) && Rails.cache
-  puts "[Seeds] Cache cleared" if defined?(Rails)
-rescue StandardError => e
-  warn "[Seeds] Clearing cache failed: #{e.class}: #{e.message}"
-end
+CacheService.clear
+puts "[Seeds] Cache generation advanced (logical invalidation)"
 
 if defined?(SearchService) && SearchService.enabled?
   puts "[Seeds] Syncing books to Meilisearch..."

@@ -19,6 +19,9 @@ class Book
 
   validates :title, :summary, presence: true
 
+  after_save :invalidate_derived_cache
+  after_destroy :invalidate_derived_cache
+
   if ENV.fetch("SEARCH_ENABLED", "false") == "true" && ENV["MEILISEARCH_URL"].present?
     begin
       require "meilisearch-rails"
@@ -46,5 +49,11 @@ class Book
     total = sales.reject(&:destroyed?).sum { |s| s.units_sold || 0 }
     self.number_of_sales = total
     save!(validate: false)
+  end
+
+  private
+
+  def invalidate_derived_cache
+    CacheInvalidationService.call
   end
 end

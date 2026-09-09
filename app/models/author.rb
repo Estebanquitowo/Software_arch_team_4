@@ -11,4 +11,13 @@ class Author
   index({ name: 1 }, background: true)
 
   validates :name, presence: true
+
+  after_save :invalidate_derived_cache
+  after_destroy :invalidate_derived_cache
+
+  private
+
+  def invalidate_derived_cache
+    CacheInvalidationService.call
+  end
 end

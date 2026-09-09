@@ -26,9 +26,9 @@ namespace :search do
 end
 
 namespace :cache do
-  desc "Clear Rails cache (Redis or memory)"
+  desc "Invalidate derived cache by advancing its MongoDB generation (no Redis flush)"
   task clear: :environment do
-    Rails.cache.clear
-    puts "[Cache] Cleared (store=#{Rails.cache.class.name})"
+    CacheService.clear
+    puts "[Cache] Generation advanced; older entries will miss and expire by TTL"
   end
 end
