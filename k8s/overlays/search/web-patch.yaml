@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: software-arch-team4
+spec:
+  template:
+    spec:
+      containers:
+        - name: web
+          env:
+            - name: SEARCH_ENABLED
+              value: "true"
+            - name: MEILISEARCH_URL
+              value: "http://meilisearch:7700"
+            - name: MEILISEARCH_API_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: search-config
+                  key: MEILISEARCH_API_KEY

@@ -1,0 +1,79 @@
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: software_arch_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: software_arch_team4_development
+
+  redis:
+    image: redis:7-alpine
+    container_name: software_arch_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    container_name: software_arch_meilisearch
+    restart: always
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    environment:
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:7700/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: software_arch_web
+    command: bin/rails server -b 0.0.0.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/rails
+      - bundle_data:/usr/local/bundle
+    environment:
+      RAILS_ENV: development
+      MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
+      MONGODB_TEST_URI: mongodb://mongodb:27017/software_arch_team4_test
+      HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN:-}
+      CACHE_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
+      SEARCH_ENABLED: "true"
+      MEILISEARCH_URL: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
+    depends_on:
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+
+volumes:
+  mongodb_data:
+  bundle_data:
+  redis_data:
+  meili_data:

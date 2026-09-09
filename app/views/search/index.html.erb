@@ -34,6 +34,11 @@
       <span class="font-semibold text-gray-900">
         "<%= @query %>"
       </span>
+      <% if defined?(@engine) && @engine %>
+        <span class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium <%= @engine.to_s.start_with?('meili') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' %>">
+          <%= @engine == :meilisearch ? 'Meilisearch' : @engine == :mongo ? 'Mongo' : @engine.to_s %>
+        </span>
+      <% end %>
     </p>
     <p class="text-xs text-gray-500">
       Page <%= @page %> of <%= @total_pages %>

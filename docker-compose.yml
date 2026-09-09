@@ -11,9 +11,9 @@ services:
       MONGO_INITDB_DATABASE: software_arch_team4_development
 
   web:
-    build: 
+    build:
       context: .
-      dockerfile: Dockerfile.dev # web image builds with dev dockerfile for development environment
+      dockerfile: Dockerfile.dev
     container_name: software_arch_web
     command: bin/rails server -b 0.0.0.0
     ports:
@@ -26,6 +26,11 @@ services:
       MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
       MONGODB_TEST_URI: mongodb://mongodb:27017/software_arch_team4_test
       HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN:-}
+      CACHE_ENABLED: ${CACHE_ENABLED:-false}
+      REDIS_URL: ${REDIS_URL:-}
+      SEARCH_ENABLED: ${SEARCH_ENABLED:-false}
+      MEILISEARCH_URL: ${MEILISEARCH_URL:-}
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-}
     depends_on:
       - mongodb
 

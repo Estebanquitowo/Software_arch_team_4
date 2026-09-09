@@ -17,6 +17,8 @@ class Sale
   private
 
   def sync_book_sales_count
-    book.recalculate_sales_count! if book
+    # Keep the owner available during destroy_all, after association unbinding.
+    parent = _parent
+    parent.recalculate_sales_count! if parent&.persisted?
   end
 end

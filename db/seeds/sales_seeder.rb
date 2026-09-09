@@ -10,7 +10,7 @@ class SalesSeeder
       sales = build_sales(publication_year)
       book.sales.destroy_all
       sales.each { |sale| book.sales.create!(sale) }
-      book.update!(number_of_sales: sales.sum { |sale| sale[:units_sold] })
+      book.recalculate_sales_count!
     end
   end
 

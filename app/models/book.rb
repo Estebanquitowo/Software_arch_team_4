@@ -19,8 +19,55 @@ class Book
 
   validates :title, :summary, presence: true
 
+  after_save :invalidate_derived_cache
+  after_destroy :invalidate_derived_cache
+
+  if ENV.fetch("SEARCH_ENABLED", "false") == "true" && ENV["MEILISEARCH_URL"].present?
+    begin
+      require "meilisearch-rails"
+      include MeiliSearch::Rails
+
+      meilisearch synchronous: true,
+                  index_uid: "books" do
+        attribute :title, :summary, :publication_year, :avg_score, :number_of_sales
+        attribute :author_name do
+          author&.name
+        end
+        attribute :review_text do
+          reviews.reject(&:destroyed?).map { |r| [ r.title, r.content ].compact.join(" ") }.join(" ")
+        end
+        searchable_attributes [ :title, :summary, :author_name, :review_text ]
+        filterable_attributes [ :publication_year ]
+        sortable_attributes [ :publication_year, :avg_score ]
+      end
+    rescue LoadError, StandardError => e
+      Rails.logger.warn("[Search] Meilisearch include failed: #{e.message}") if defined?(Rails)
+    end
+  end
+
   def recalculate_sales_count!
-    total = sales.sum { |s| s.units_sold || 0 }
-    set(number_of_sales: total)
+    BookStatisticsRecalculator.recalculate_sales(id)
+  end
+
+  def recalculate_avg_score!
+    BookStatisticsRecalculator.recalculate_average(id)
+  end
+
+  def average_review_score
+    CacheService.fetch(Book.average_review_score_cache_key(id), expires_in: CacheService::CACHE_TTL[:average_review_score]) do
+      # Read only the persisted statistic, never this instance's stale attributes
+      # or embedded reviews. A missing score (including no reviews) remains nil.
+      Book.where(id: id).limit(1).pluck(:avg_score).first
+    end
+  end
+
+  def self.average_review_score_cache_key(book_id)
+    "books/#{book_id}/average_review_score"
+  end
+
+  private
+
+  def invalidate_derived_cache
+    CacheInvalidationService.call
   end
 end

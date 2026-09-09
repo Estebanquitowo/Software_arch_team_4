@@ -4,13 +4,36 @@ set -euo pipefail
 # 1-command startup for k3d Kubernetes (k3d-only, no minikube)
 # Equivalent to `docker compose up --build` but for k8s:
 #   builds image -> creates k3d cluster if missing -> imports image -> creates secret -> applies manifests
+#
+# Usage: bin/k8s-up [overlay]
+#   overlay: base (default) | cache | search | full
+#     base   = web + mongodb            (app as-is, no cache/search)
+#     cache  = + redis                  (CACHE_ENABLED=true)
+#     search = + meilisearch            (SEARCH_ENABLED=true)
+#     full   = + redis + meilisearch    (both enabled)
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
 
+OVERLAY="${1:-base}"
 CLUSTER="${K3D_CLUSTER:-dev}"
 IMAGE="${K8S_IMAGE:-software_arch_team_4:k8s}"
 NAMESPACE="software-arch-team4"
+
+case "$OVERLAY" in
+  base|cache|search|full) ;;
+  *) echo "error: unknown overlay '$OVERLAY' (use: base|cache|search|full)"; exit 1 ;;
+esac
+
+if [ "$OVERLAY" = "base" ]; then
+  KUSTOMIZE_DIR="$ROOT/k8s/base"
+else
+  KUSTOMIZE_DIR="$ROOT/k8s/overlays/$OVERLAY"
+fi
+[ -d "$KUSTOMIZE_DIR" ] || {
+  echo "error: kustomize dir not found: $KUSTOMIZE_DIR"
+  exit 1
+}
 
 echo "==> Checking prerequisites (docker, kubectl, k3d)..."
 command -v docker >/dev/null 2>&1 || { echo "error: docker not found"; exit 1; }
@@ -31,7 +54,7 @@ echo "==> Importing image $IMAGE into k3d cluster $CLUSTER..."
 k3d image import "$IMAGE" -c "$CLUSTER"
 
 echo "==> Ensuring namespace $NAMESPACE..."
-kubectl apply -f "$ROOT/k8s/namespace.yaml" >/dev/null
+kubectl apply -f "$ROOT/k8s/base/namespace.yaml" >/dev/null
 
 # Create secret if missing (do not overwrite real one with dummy template)
 if ! kubectl -n "$NAMESPACE" get secret app-secret >/dev/null 2>&1; then
@@ -48,15 +71,27 @@ else
   echo "==> Secret app-secret already exists, skipping creation (delete it first to regenerate)"
 fi
 
-echo "==> Applying manifests (kustomize)..."
-kubectl apply -k "$ROOT/k8s"
+echo "==> Applying manifests (kustomize, overlay=$OVERLAY)..."
+kubectl apply -k "$KUSTOMIZE_DIR"
 
 echo "==> Waiting for deployments..."
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/mongodb --timeout=120s
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/web --timeout=120s
+# Extra services may exist depending on overlay (redis / meilisearch)
+for dep in redis meilisearch; do
+  if kubectl -n "$NAMESPACE" get deployment "$dep" >/dev/null 2>&1; then
+    echo "==> Waiting for deployment/$dep..."
+    kubectl -n "$NAMESPACE" wait --for=condition=available "deployment/$dep" --timeout=120s
+  fi
+done
+
+if [ -z "${K8S_SKIP_SEED:-}" ]; then
+  echo "==> Seeding data (runs reindex + cache clear automatically if enabled)..."
+  kubectl -n "$NAMESPACE" exec deploy/web -- bin/rails db:seed || echo "!! seed failed (non-fatal)"
+fi
 
 echo ""
-echo "==> Ready! k8s stack is up (k3d-only)."
+echo "==> Ready! k8s stack is up (k3d-only, overlay=$OVERLAY)."
 kubectl -n "$NAMESPACE" get pods,svc,pvc
 echo ""
 echo "Access app via:"
@@ -64,3 +99,5 @@ echo "  kubectl -n $NAMESPACE port-forward svc/web 3000:80"
 echo "  curl http://localhost:3000/up   # expect 200"
 echo ""
 echo "Rancher: k3d kubeconfig get $CLUSTER -> Import Existing Cluster in Rancher UI -> see namespace $NAMESPACE"
+echo ""
+echo "To change variant (after bin/k8s-down): bin/k8s-up [base|cache|search|full]"

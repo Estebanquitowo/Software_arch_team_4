@@ -1,0 +1,40 @@
+# Isolated, disposable infrastructure. No host ports or application volumes.
+services:
+  mongodb:
+    image: mongo:8.0
+    tmpfs:
+      - /data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand({ping: 1}).ok ? 0 : 1)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+  tests:
+    image: software-arch-regression:local
+    build:
+      context: ..
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ..:/source:ro
+    command: ["sh", "/source/test/support/run-suite.sh"]
+    environment:
+      RAILS_ENV: test
+      MONGODB_TEST_URI: mongodb://mongodb:27017/assignment3_regression_test
+      REGRESSION_REDIS_URL: redis://redis:6379/0
+      CACHE_ENABLED: "false"
+      SEARCH_ENABLED: "false"
+      HARDCOVER_API_TOKEN: ""
+      PARALLEL_WORKERS: "1"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
