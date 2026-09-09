@@ -16,15 +16,10 @@ class Review
 
   private
 
-  # Recomputes Book#avg_score whenever a review is added/edited/removed.
-  # Uses the in-memory relation (excluding the just-destroyed doc) so it's
-  # correct regardless of callback ordering, and only touches the DB once.
   def recalculate_book_avg_score
-    book = _parent #to test
-    return unless book.persisted?
-
-    ratings = book.reviews.reject(&:destroyed?).map(&:rating).compact
-    book.avg_score = ratings.empty? ? nil : (ratings.sum.to_f / ratings.size).round(2)
-    book.save!(validate: false)
+    # Mongoid unbinds the public association before destroy_all's after callbacks;
+    # _parent still identifies the owner. Only its ID is used for recalculation.
+    parent = _parent
+    parent.recalculate_avg_score! if parent&.persisted?
   end
 end

@@ -1,4 +1,29 @@
 module SearchScenarios
+  # Keep the gem's real instance ms_index! method, spying only on its class-level
+  # delivery boundary. This verifies callback wiring, not server availability.
+  # A subprocess isolates the enabled-at-boot model and the temporary spy.
+  def search_statistics(**)
+    book = search_fixture
+    original_index = Book.method(:ms_index!)
+    snapshots = []
+    Book.define_singleton_method(:ms_index!) do |record, *_args|
+      snapshots << {
+        avg_score: record.avg_score, number_of_sales: record.number_of_sales,
+        review_text: record.reviews.map(&:content).join(" "),
+        fresh: !record.equal?(book), version: CacheGeneration.current_version
+      }
+    end
+    review = book.reviews.create!(rating: 5, title: "Review", content: "Initial text", reviewer_name: "Reader")
+    review.update!(content: "Updated text")
+    review.destroy!
+    sale = book.sales.create!(year: 2020, units_sold: 10)
+    sale.update!(units_sold: 20)
+    sale.destroy!
+    { enabled: !!SearchService.enabled?, snapshots: snapshots }
+  ensure
+    Book.define_singleton_method(:ms_index!, original_index) if original_index
+  end
+
   def search_fixture
     author = Author.create!(name: "Regression author")
     # Existing valid MongoDB data, inserted without requiring an available index.

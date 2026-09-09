@@ -46,9 +46,11 @@ class Book
   end
 
   def recalculate_sales_count!
-    total = sales.reject(&:destroyed?).sum { |s| s.units_sold || 0 }
-    self.number_of_sales = total
-    save!(validate: false)
+    BookStatisticsRecalculator.recalculate_sales(id)
+  end
+
+  def recalculate_avg_score!
+    BookStatisticsRecalculator.recalculate_average(id)
   end
 
   private

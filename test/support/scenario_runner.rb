@@ -12,7 +12,7 @@ if %w[redis_boot redis_invalidation reload].include?(name)
   proxy = NetworkFaults::RedisProxy.new(ENV.fetch("REGRESSION_REDIS_URL"), online: name != "redis_boot")
   ENV["CACHE_ENABLED"] = "true"
   ENV["REDIS_URL"] = proxy.url
-elsif %w[search_write search_read].include?(name)
+elsif %w[search_write search_read search_statistics].include?(name)
   search = NetworkFaults::UnavailableSearch.new
   ENV["SEARCH_ENABLED"] = "true"
   ENV["MEILISEARCH_URL"] = search.url
