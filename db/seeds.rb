@@ -13,10 +13,6 @@ puts "[Seeds] Cache generation advanced (logical invalidation)"
 
 if defined?(SearchService) && SearchService.enabled?
   puts "[Seeds] Syncing books to Meilisearch..."
-  begin
-    Book.reindex!
-    puts "[Seeds] Meilisearch reindex done (#{Book.count} books)"
-  rescue StandardError => e
-    warn "[Seeds] Meilisearch reindex failed: #{e.message} (search will fallback to Mongo)"
-  end
+  result = SearchSyncService.reconcile!
+  puts "[Seeds] Meilisearch reconciliation: #{result}"
 end

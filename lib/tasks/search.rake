@@ -1,27 +1,27 @@
 namespace :search do
-  desc "Reindex all books into Meilisearch (no-op if SEARCH_ENABLED != true)"
-  task reindex: :environment do
-    unless SearchService.enabled?
-      puts "[Search] Meilisearch disabled (SEARCH_ENABLED=#{ENV['SEARCH_ENABLED']}, MEILISEARCH_URL=#{ENV['MEILISEARCH_URL']}) - using Mongo fallback, nothing to reindex."
-      next
-    end
-    count = Book.count
-    puts "[Search] Reindexing #{count} books to Meilisearch at #{ENV['MEILISEARCH_URL']}..."
-    Book.reindex!
-    puts "[Search] Done. Indexed #{count} books."
-  rescue StandardError => e
-    warn "[Search] Reindex failed: #{e.class}: #{e.message}"
-    warn "Falling back to Mongo search will continue to work."
+  desc "Rebuild the Books index from MongoDB and publish clean only after verified success"
+  task reconcile: :environment do
+    result = SearchSyncService.reconcile!
+    puts "[Search] Reconciliation: #{result}"
+    abort "[Search] Index remains dirty; inspect service logs/state" unless %i[clean disabled].include?(result)
   end
+
+  desc "Reconcile all books, including documents deleted during an outage"
+  task reindex: :reconcile
 
   desc "Clear Meilisearch index"
   task clear: :environment do
-    unless SearchService.enabled?
-      puts "[Search] Meilisearch disabled - nothing to clear"
-      next
-    end
-    Book.msclear_index!
-    puts "[Search] Index cleared"
+    result = SearchSyncService.clear!
+    puts "[Search] Clear: #{result}; index remains dirty until reconciliation"
+    abort "[Search] Clear did not complete" unless %i[cleared disabled].include?(result)
+  end
+
+  desc "Release an abandoned lock only after confirming the owner has stopped"
+  task :unlock, [ :token ] => :environment do |_task, args|
+    abort "Set SEARCH_SYNC_OWNER_STOPPED=yes after verifying the owner is stopped" unless ENV["SEARCH_SYNC_OWNER_STOPPED"] == "yes"
+    abort "Supply the exact abandoned lock token" if args[:token].blank?
+    abort "Lock token did not match; nothing changed" unless SearchSyncState.unlock_abandoned!(args[:token])
+    puts "[Search] Lock released; index remains dirty. Run search:reconcile."
   end
 end
 

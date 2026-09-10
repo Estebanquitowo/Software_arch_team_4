@@ -7,15 +7,17 @@ if meili_url && search_enabled == "true"
     require "meilisearch-rails"
     MeiliSearch::Rails.configuration = {
       meilisearch_url: meili_url,
-      meilisearch_api_key: meili_key || "",
-      per_environment: true
+      meilisearch_api_key: meili_key,
+      per_environment: true,
+      timeout: 2,
+      max_retries: 0
     }
-    Rails.logger.info("[Search] Meilisearch enabled at #{meili_url}")
+    Rails.logger.info("[Search] Meilisearch enabled")
   rescue LoadError => e
     Rails.logger.warn("[Search] meilisearch-rails gem not installed (#{e.message}) -> Mongo fallback")
   end
 else
-  Rails.logger.info("[Search] Meilisearch disabled -> Mongo fallback (SEARCH_ENABLED=#{search_enabled}, URL=#{meili_url || 'nil'})")
+  Rails.logger.info("[Search] Meilisearch disabled -> Mongo fallback")
 end
 
 module SearchService
@@ -26,15 +28,13 @@ module SearchService
       ENV["MEILISEARCH_URL"].present? &&
       defined?(MeiliSearch) &&
       Book.respond_to?(:ms_search)
-  rescue StandardError
-    false
   end
 
   def self.search(query, page: 1)
     query = query.to_s.strip
     return { books: [], total: 0, total_pages: 1, engine: :none } if query.blank?
 
-    if enabled?
+    if enabled? && !SearchSyncState.current.fetch("dirty")
       meili_search(query, page: page)
     else
       mongo_search(query, page: page)
@@ -44,7 +44,7 @@ module SearchService
   def self.meili_search(query, page: 1)
     page = [ page.to_i, 1 ].max
     offset = (page - 1) * PAGE_SIZE
-    result = Book.ms_search(query, limit: PAGE_SIZE, offset: offset)
+    result = SearchSyncService.remote { Book.ms_search(query, limit: PAGE_SIZE, offset: offset) }
     books = result.to_a
     total = result.raw_answer["estimatedTotalHits"] || result.raw_answer["totalHits"] || books.size
     total = total.to_i
@@ -56,8 +56,8 @@ module SearchService
     end
     total_pages = [ (total / PAGE_SIZE.to_f).ceil, 1 ].max
     { books: books, total: total, total_pages: total_pages, engine: :meilisearch }
-  rescue StandardError => e
-    Rails.logger.warn("[Search] Meilisearch failed (#{e.class}: #{e.message}), fallback to Mongo")
+  rescue Meilisearch::ApiError, Meilisearch::CommunicationError, Meilisearch::TimeoutError => e
+    SearchSyncService.search_failed!(e)
     mongo_search(query, page: page).merge(engine: :meilisearch_error)
   end
 

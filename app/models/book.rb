@@ -21,6 +21,8 @@ class Book
 
   after_save :invalidate_derived_cache
   after_destroy :invalidate_derived_cache
+  after_commit :sync_search_change, on: %i[create update]
+  after_commit :sync_search_deletion, on: :destroy
 
   if ENV.fetch("SEARCH_ENABLED", "false") == "true" && ENV["MEILISEARCH_URL"].present?
     begin
@@ -28,6 +30,7 @@ class Book
       include MeiliSearch::Rails
 
       meilisearch synchronous: true,
+                  auto_index: false, auto_remove: false,
                   index_uid: "books" do
         attribute :title, :summary, :publication_year, :avg_score, :number_of_sales
         attribute :author_name do
@@ -66,6 +69,14 @@ class Book
   end
 
   private
+
+  def sync_search_change
+    SearchSyncService.book_changed(id)
+  end
+
+  def sync_search_deletion
+    SearchSyncService.book_deleted(id)
+  end
 
   def invalidate_derived_cache
     CacheInvalidationService.call
