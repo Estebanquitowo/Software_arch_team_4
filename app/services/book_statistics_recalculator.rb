@@ -52,11 +52,7 @@ class BookStatisticsRecalculator
     keys = field == "avg_score" ? [ Book.average_review_score_cache_key(book_id) ] : []
     CacheInvalidationService.call(keys: keys)
 
-    if Book.method_defined?(:ms_index!)
-      # Never save/reload the caller's stale parent: it may hold pending edits.
-      # A concurrent deletion between the update and this read is harmless.
-      Book.where(id: book_id).first&.ms_index!
-    end
+    SearchSyncService.book_changed(book_id)
     document
   end
   private_class_method :update_statistic

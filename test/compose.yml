@@ -17,6 +17,18 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    tmpfs:
+      - /meili_data
+    environment:
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:7700/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
   tests:
     image: software-arch-regression:local
     build:
@@ -29,6 +41,7 @@ services:
       RAILS_ENV: test
       MONGODB_TEST_URI: mongodb://mongodb:27017/assignment3_regression_test
       REGRESSION_REDIS_URL: redis://redis:6379/0
+      REGRESSION_MEILISEARCH_URL: http://meilisearch:7700
       CACHE_ENABLED: "false"
       SEARCH_ENABLED: "false"
       HARDCOVER_API_TOKEN: ""
@@ -37,4 +50,6 @@ services:
       mongodb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      meilisearch:
         condition: service_healthy

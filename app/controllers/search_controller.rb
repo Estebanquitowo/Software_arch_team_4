@@ -6,9 +6,16 @@ class SearchController < ApplicationController
     @page = [ Integer(params[:page] || 1, exception: false) || 1, 1 ].max
 
     if @query.present?
-      cache_key = "search/#{@query.parameterize}/page/#{@page}"
-      result = CacheService.fetch(cache_key, expires_in: CacheService::CACHE_TTL[:search]) do
-        SearchService.search(@query, page: @page)
+      state = SearchSyncState.current
+      result = if state.fetch("dirty")
+        SearchService.mongo_search(@query, page: @page)
+      else
+        # Capture the state before cache access. Late writes retain the old key;
+        # publishing clean increments revision, separating results after recovery.
+        cache_key = "search/#{state.fetch('_id')}/#{state.fetch('epoch')}/#{state.fetch('revision')}/#{@query.parameterize}/page/#{@page}"
+        CacheService.fetch(cache_key, expires_in: CacheService::CACHE_TTL[:search]) do
+          SearchService.search(@query, page: @page)
+        end
       end
       @books = result[:books]
       @total = result[:total]

@@ -283,10 +283,85 @@ docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'reports/*' 
 
 ### d) Stale data
 
-* **None expected.** Every mutation invalidates the cache: `Review`/`Sale` callbacks recompute `avg_score`/`number_of_sales` and re-save the book, which fires `Book#after_save` → `CacheService.delete_matched("reports/*", "books/*", "search/*")`. Editing a `Book` or `Author` directly invalidates `reports/*` (author summary). Meilisearch is `synchronous: true`, so the index is updated on the same save that changes the data.
+* **None expected.** Every mutation invalidates the cache: `Review`/`Sale` callbacks recompute `avg_score`/`number_of_sales` and re-save the book, which fires `Book#after_save` → `CacheService.delete_matched("reports/*", "books/*", "search/*")`. Editing a `Book` or `Author` directly invalidates `reports/*` (author summary). Search synchronization now goes through `SearchSyncService`: failures leave persistent recovery debt and reads use MongoDB until reconciliation succeeds (see below).
 * **Accepted / justified cases.** The per-key TTL (5–10 min) is only a safety net, never the invalidation mechanism. If Redis is unreachable at boot the app falls back to `:memory_store` (documented as bug #8 in `k8s/README.md`), and if Meilisearch is down search falls back to MongoDB regex — in both cases the app stays functional and consistent with MongoDB on the next read.
 
 The same tests run on the Kubernetes stack: `bin/k8s-up full`, port-forward `svc/web 3000:80` (service port 80) for the `curl` steps, and use `kubectl -n software-arch-team4 exec deploy/web -- bin/rails runner '<code>'` instead of `docker compose ... exec web`.
+
+## Search failure and recovery
+
+MongoDB remains the source of truth. `SearchSyncService` owns all application
+index writes; the gem's automatic indexing/removal callbacks are disabled.
+Book callbacks and `BookStatisticsRecalculator` (Review/Sale changes) delegate to
+this service using fresh persisted data. Expected Meilisearch failures are logged
+without credentials or document payloads and do not turn successful CRUD writes
+into HTTP 500. MongoDB and programming errors are not silently swallowed.
+
+`SearchSyncState` stores `dirty`, a monotonic `revision`, and an exclusive
+`lock_token`/`locked_at` in MongoDB, scoped to the configured index/server within
+the application's database. Missing state starts dirty. Writes advance revision
+and mark dirty even with `SEARCH_ENABLED=false`, without contacting Meilisearch.
+When clean, normal writes synchronously update/delete the affected document and
+verify the remote task succeeded. With previous recovery debt, a successful write
+attempts one full reconciliation: settle pending index tasks, clear all documents,
+then index the current Books in batches of 100. Every new settings/clear/index
+task must finish with `status == succeeded`; HTTP 202 or `await` alone is not proof.
+This also removes documents for Books deleted during an outage, including when
+MongoDB has no Books left.
+
+Clean publication requires the same revision and lock token. Concurrent writers
+that cannot acquire the lock do not wait: their MongoDB changes stay saved and
+dirty remains true until a later successful reconciliation. The lock also
+serializes incremental index writes with rebuilds. Recovery has a 15-second task
+budget, with SDK HTTP timeout of 2 seconds and automatic retries disabled; an
+in-flight HTTP call can extend that budget. There is no periodic recovery polling,
+startup ping/rebuild, or reconciliation triggered by a search. Task completion
+waits are bounded and occur only inside an explicit synchronization attempt.
+
+While dirty, search bypasses its result cache and uses MongoDB. Clean search cache
+keys include state identity, epoch and revision, so old/in-flight results cannot
+be reused after clean publication. A failed clean-index search marks dirty and
+falls back without rebuilding. General cache generation, purge and individual
+average-score caching are unchanged.
+
+For first activation or recovery without another write, run the manual task on
+the selected search-enabled Compose stack (no seeds required):
+
+```sh
+docker compose -f docker-compose.full.yml exec web bin/rails search:reconcile
+```
+
+`search:reindex` is an alias for that full reconciliation. `search:clear` uses the
+same coordination/task checks but deliberately leaves the state dirty. Tasks
+report `disabled` without a network call if search is off; failed/busy/changed-
+revision reconciliation exits unsuccessfully so operators must not assume clean.
+
+Locks are released in `ensure`, only by their owner. An abrupt process death can
+leave an abandoned lock; **never unlock a live owner**. After stopping/verifying
+the old owner, inspect `SearchSyncState.current` in Rails console and use its exact
+token with `bin/rails 'search:unlock[TOKEN]'`, setting
+`SEARCH_SYNC_OWNER_STOPPED=yes` in that command's environment. This guarded task
+keeps dirty and advances revision; run `search:reconcile` afterwards. There is no
+automatic expiration or lock stealing.
+
+Limits: the MongoDB document write and dirty marker are separate operations, so a
+process crash between them can escape tracking. Raw collection writes, `set`,
+`delete_all` and other callback-bypassing operations need explicit reconciliation.
+A crash during rebuilding keeps dirty and may require the manual lock procedure.
+This is not a distributed transaction. Author rename propagation and search-query
+cache-key normalization are separate outstanding issues, not fixed by this block.
+
+Regression checks use disposable MongoDB/Redis/Meilisearch services, random test
+databases/indexes and a TCP fault proxy; they do not seed or modify normal data:
+
+```sh
+docker compose -p a3-regression -f test/compose.yml run --rm tests sh /source/test/support/run-suite.sh --seed 12345
+docker compose -p a3-regression -f test/compose.yml stop
+```
+
+The real-engine test checks title/summary/reviews, relevance, pagination, HTTP
+writes during network failure, dirty-cache bypass, recovery removing an orphaned
+document, review edits/deletes, and the manual clear/reindex/reconcile tasks.
 
 ## Rancher Integration
 

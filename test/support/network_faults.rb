@@ -9,9 +9,9 @@ module NetworkFaults
   class RedisProxy
     attr_reader :url
 
-    def initialize(upstream, online: true)
+    def initialize(upstream, online: true, scheme: "redis")
       @target = URI(upstream)
-      raise "Tests support redis:// endpoints only" unless @target.scheme == "redis"
+      raise "Unexpected test proxy protocol" unless @target.scheme == scheme
       @mutex = Mutex.new
       @online = online
       @connections = []
@@ -81,6 +81,14 @@ module NetworkFaults
 
   # Real SDK HTTP requests reach this endpoint; no Book/SearchService callbacks
   # are stubbed. Represents a temporarily unavailable engine behind HTTP.
+  # Same transparent TCP transport, also exercising connection-level failures
+  # against a real HTTP engine rather than only a canned HTTP 503 response.
+  class HTTPProxy < RedisProxy
+    def initialize(upstream)
+      super(upstream, scheme: "http")
+    end
+  end
+
   class UnavailableSearch
     attr_reader :url, :requests
 
