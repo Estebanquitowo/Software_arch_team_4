@@ -36,6 +36,7 @@ services:
     volumes:
       - .:/rails
       - bundle_data:/usr/local/bundle
+      - image_data:${IMAGE_STORAGE_PATH:-/data/images}
     environment:
       RAILS_ENV: development
       MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
@@ -44,6 +45,8 @@ services:
       CACHE_ENABLED: "true"
       REDIS_URL: redis://redis:6379/0
       SEARCH_ENABLED: "false"
+      IMAGE_STORAGE_PATH: ${IMAGE_STORAGE_PATH:-/data/images}
+      SERVE_STATIC: ${SERVE_STATIC:-true}
     depends_on:
       mongodb:
         condition: service_started
@@ -54,3 +57,4 @@ volumes:
   mongodb_data:
   bundle_data:
   redis_data:
+  image_data:

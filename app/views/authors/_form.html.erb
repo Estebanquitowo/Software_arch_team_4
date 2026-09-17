@@ -1,4 +1,4 @@
-<%= form_with(model: author, class: "space-y-4 max-w-lg") do |form| %>
+<%= form_with(model: author, class: "space-y-4 max-w-lg", multipart: true) do |form| %>
   <% if author.errors.any? %>
     <div class="alert-error">
       <h2 class="font-semibold mb-2">
@@ -15,6 +15,21 @@
   <div>
     <%= form.label :name, class: "form-label" %>
     <%= form.text_field :name, class: "form-input" %>
+  </div>
+
+  <div>
+    <%= form.label :image, "Profile Image", class: "form-label" %>
+    <% if author.image.present? %>
+      <div class="mb-2">
+        <%= image_tag stored_image_path(author.image), class: "w-24 rounded border border-gray-200", alt: "#{author.name} photo" %>
+      </div>
+    <% end %>
+    <%= form.file_field :image, accept: "image/jpeg,image/png,image/gif,image/webp", class: "form-input" %>
+    <% if author.image.present? %>
+      <label class="mt-1 inline-flex items-center text-sm text-gray-600">
+        <%= form.check_box :remove_image, class: "mr-1" %> Remove current image
+      </label>
+    <% end %>
   </div>
 
   <div>

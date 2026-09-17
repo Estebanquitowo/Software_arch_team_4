@@ -25,6 +25,9 @@
 
 /public/assets
 
+# Ignore uploaded images (content stored outside the repo).
+/storage/uploads
+
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 

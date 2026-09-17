@@ -57,6 +57,8 @@ The app implements **optional** components via Strategy pattern:
 
 * **Cache:** `Redis` (`redis:7-alpine`) with `Rails.cache = :redis_cache_store`. If `REDIS_URL` unreachable/missing → gracefully falls back to `:memory_store` (`CacheService.fetch` rescues and yields directly, so requests never 500).
 * **Search:** `Meilisearch` (`getmeili/meilisearch:v1.12`) with `meilisearch-rails`. If `MEILISEARCH_URL` unreachable/missing → gracefully falls back to native MongoDB regex/`$text` search (`SearchService`).
+* **Uploads:** book covers and author images are stored under `IMAGE_STORAGE_PATH` (default `storage/uploads`; the compose files mount a shared `image_data` volume there) and served at `/images/<relative>` by `ImagesController`. In multi-instance deployments all instances must share this storage path.
+* **Static assets:** the app serves `public/` files and `/images/*` uploads by default. Set `SERVE_STATIC=false` when a reverse proxy (HAProxy) owns static assets at the edge so the app stops serving them (tested via `StaticServe`).
 
 4 standalone Compose files cover every combination:
 

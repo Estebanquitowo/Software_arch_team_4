@@ -54,6 +54,7 @@ services:
     volumes:
       - .:/rails
       - bundle_data:/usr/local/bundle
+      - image_data:${IMAGE_STORAGE_PATH:-/data/images}
     environment:
       RAILS_ENV: development
       MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
@@ -64,6 +65,8 @@ services:
       SEARCH_ENABLED: "true"
       MEILISEARCH_URL: http://meilisearch:7700
       MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
+      IMAGE_STORAGE_PATH: ${IMAGE_STORAGE_PATH:-/data/images}
+      SERVE_STATIC: ${SERVE_STATIC:-true}
     depends_on:
       mongodb:
         condition: service_started
@@ -77,3 +80,4 @@ volumes:
   bundle_data:
   redis_data:
   meili_data:
+  image_data:

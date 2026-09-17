@@ -1,6 +1,12 @@
 <div id="<%= dom_id book %>" class="card max-w-3xl">
   <div class="space-y-4">
     
+    <% if book.cover_image.present? %>
+      <div>
+        <%= image_tag stored_image_path(book.cover_image), class: "w-32 rounded border border-gray-200", alt: "#{book.title} cover" %>
+      </div>
+    <% end %>
+
     <div>
       <span class="field-label">Title</span>
       <h2 class="text-xl font-bold text-gray-900"><%= book.title %></h2>

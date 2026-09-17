@@ -12,12 +12,15 @@ class Book
   field :publication_year, type: Integer
   field :avg_score, type: Float
   field :number_of_sales, type: Integer, default: 0
+  field :cover_image, type: String
+
+  attr_accessor :cover_image_upload
+  validates :title, :summary, presence: true
+  validate :cover_image_upload_is_valid
 
   index({ summary: "text" }, background: true)
   index({ publication_date: 1 }, background: true)
   index({ "sales.year" => 1 }, background: true)
-
-  validates :title, :summary, presence: true
 
   after_save :invalidate_derived_cache
   after_destroy :invalidate_derived_cache
@@ -69,6 +72,12 @@ class Book
   end
 
   private
+
+  def cover_image_upload_is_valid
+    return if cover_image_upload.blank? || ImageStorage.valid_upload?(cover_image_upload)
+
+    errors.add(:cover_image, "must be a JPG, PNG, GIF or WebP image up to 5 MB")
+  end
 
   def sync_search_change
     SearchSyncService.book_changed(id)
