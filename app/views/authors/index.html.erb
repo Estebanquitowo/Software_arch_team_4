@@ -18,6 +18,7 @@
   <table class="table-base">
     <thead>
       <tr>
+        <th class="th-cell">Image</th>
         <th class="th-cell">Name</th>
         <th class="th-cell">Date of Birth</th>
         <th class="th-cell">Country</th>
@@ -28,6 +29,13 @@
     <tbody class="divide-y divide-gray-100">
       <% @authors.each do |author| %>
         <tr class="hover:bg-gray-50 transition-colors">
+          <td class="td-cell">
+            <% if author.image.present? %>
+              <%= image_tag stored_image_path(author.image), class: "w-12 h-12 rounded-full border border-gray-200 object-cover", alt: "#{author.name} photo" %>
+            <% else %>
+              <span class="text-gray-300">-</span>
+            <% end %>
+          </td>
           <td class="td-cell font-medium text-gray-900">
             <%= link_to author.name, author, class: "text-blue-600 hover:underline" %>
           </td>

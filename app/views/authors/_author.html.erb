@@ -1,5 +1,11 @@
 <div id="<%= dom_id author %>" class="card max-w-2xl">
   <div class="space-y-4">
+    <% if author.image.present? %>
+      <div>
+        <%= image_tag stored_image_path(author.image), class: "w-32 rounded-full border border-gray-200", alt: "#{author.name} photo" %>
+      </div>
+    <% end %>
+
     <div>
       <span class="field-label">Name</span>
       <p class="text-lg font-medium text-gray-900"><%= author.name %></p>

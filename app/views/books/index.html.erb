@@ -18,6 +18,7 @@
   <table class="table-base">
     <thead>
       <tr>
+        <th class="th-cell">Cover</th>
         <th class="th-cell">Title</th>
         <th class="th-cell">Author</th>
         <th class="th-cell">Publication Date</th>
@@ -29,6 +30,13 @@
     <tbody class="divide-y divide-gray-100">
       <% @books.each do |book| %>
         <tr class="hover:bg-gray-50 transition-colors">
+          <td class="td-cell">
+            <% if book.cover_image.present? %>
+              <%= image_tag stored_image_path(book.cover_image), class: "w-12 rounded border border-gray-200", alt: "#{book.title} cover" %>
+            <% else %>
+              <span class="text-gray-300">-</span>
+            <% end %>
+          </td>
           <td class="td-cell font-medium text-gray-900">
             <%= link_to book.title, book, class: "text-blue-600 hover:underline" %>
           </td>
