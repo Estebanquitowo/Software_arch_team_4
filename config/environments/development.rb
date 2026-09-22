@@ -56,6 +56,20 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
+  # Allow HAProxy and custom domain (Assignment 4 - Edge)
+  # Rails HostAuthorization blocks unknown Host headers (e.g. web:3000, app.localhost).
+  # HAProxy health checks use `Host: localhost` and client requests use `app.localhost`.
+  config.hosts << "app.localhost"
+  config.hosts << "web"
+  config.hosts << "haproxy"
+  config.hosts << /.*\.localhost/
+  # For scale mode with deploy replicas, internal DNS may resolve web to multiple IPs;
+  # allow any Host to avoid 403 in development (safe, not production).
+  # Alternatively use: config.hosts.clear to allow all.
+  config.hosts << "web1"
+  config.hosts << "web2"
+  config.hosts << "web3"
+
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
 

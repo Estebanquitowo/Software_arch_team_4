@@ -47,14 +47,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: software_arch_web
-    command: bin/rails server -b 0.0.0.0
+    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0"
     expose:
       - "3000"
     volumes:
       - .:/rails
       - bundle_data:/usr/local/bundle
       - image_data:${IMAGE_STORAGE_PATH:-/data/images}
+    tmpfs:
+      - /rails/tmp/pids
     environment:
       RAILS_ENV: development
       MONGODB_URI: mongodb://mongodb:27017/software_arch_team4_development
@@ -67,6 +68,10 @@ services:
       MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
       IMAGE_STORAGE_PATH: ${IMAGE_STORAGE_PATH:-/data/images}
       SERVE_STATIC: "false"
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
     depends_on:
       mongodb:
         condition: service_started
@@ -83,7 +88,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./haproxy/haproxy.scale.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
       - ./haproxy/certs:/usr/local/etc/haproxy/certs:ro
       - image_data:/data/images:ro
     depends_on:
