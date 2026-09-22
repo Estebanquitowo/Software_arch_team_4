@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Stop k3d Kubernetes stack (keeps cluster by default)
 # Usage: bin/k8s-down [overlay] [--delete-cluster]
-#   overlay: base (default) | cache | search | full  (must match bin/k8s-up)
+#   overlay: base (default) | cache | search | full | edge  (must match bin/k8s-up)
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
@@ -15,8 +15,8 @@ DELETE_CLUSTER=""
 for arg in "$@"; do
   case "$arg" in
     --delete-cluster) DELETE_CLUSTER="1" ;;
-    base|cache|search|full) OVERLAY="$arg" ;;
-    *) echo "warning: ignoring unknown arg '$arg' (use: base|cache|search|full [--delete-cluster])" ;;
+    base|cache|search|full|edge) OVERLAY="$arg" ;;
+    *) echo "warning: ignoring unknown arg '$arg' (use: base|cache|search|full|edge [--delete-cluster])" ;;
   esac
 done
 

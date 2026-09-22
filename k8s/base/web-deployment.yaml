@@ -7,7 +7,7 @@ metadata:
     app: web
     app.kubernetes.io/name: software_arch_team_4
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: web
@@ -33,6 +33,9 @@ spec:
                 name: app-config
             - secretRef:
                 name: app-secret
+          volumeMounts:
+            - name: images
+              mountPath: /data/images
           # Explicit env overrides example (kept minimal; ConfigMap/Secret is source of truth):
           # env:
           #   - name: MONGODB_URI
@@ -60,3 +63,7 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: images
+          persistentVolumeClaim:
+            claimName: images-data

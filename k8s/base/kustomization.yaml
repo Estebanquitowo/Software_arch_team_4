@@ -15,6 +15,7 @@ resources:
   - mongodb-service.yaml
   - mongodb-deployment.yaml
   - web-service.yaml
+  - images-pvc.yaml
   - web-deployment.yaml
 
 labels:

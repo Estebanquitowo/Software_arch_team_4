@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy
+spec:
+  type: ClusterIP
+  selector:
+    app: haproxy
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https

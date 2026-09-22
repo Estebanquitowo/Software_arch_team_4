@@ -11,6 +11,8 @@ data:
   RAILS_ENV: "development"
   RAILS_LOG_LEVEL: "info"
   PORT: "3000"
+  # All Rails replicas use the same images-data PVC, not their container layer.
+  IMAGE_STORAGE_PATH: "/data/images"
   # Service DNS "mongodb" (from mongodb-service.yaml) must match host here.
   MONGODB_URI: "mongodb://mongodb:27017/software_arch_team4_development?directConnection=true"
   MONGODB_TEST_URI: "mongodb://mongodb:27017/software_arch_team4_test?directConnection=true"

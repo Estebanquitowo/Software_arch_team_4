@@ -67,7 +67,8 @@ services:
       MEILISEARCH_URL: http://meilisearch:7700
       MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
       IMAGE_STORAGE_PATH: ${IMAGE_STORAGE_PATH:-/data/images}
-      SERVE_STATIC: "false"
+      SERVE_STATIC: "true"
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set a shared SECRET_KEY_BASE in .env for all Rails replicas}
     deploy:
       replicas: 3
       restart_policy:

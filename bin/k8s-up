@@ -6,11 +6,12 @@ set -euo pipefail
 #   builds image -> creates k3d cluster if missing -> imports image -> creates secret -> applies manifests
 #
 # Usage: bin/k8s-up [overlay]
-#   overlay: base (default) | cache | search | full
+#   overlay: base (default) | cache | search | full | edge
 #     base   = web + mongodb            (app as-is, no cache/search)
 #     cache  = + redis                  (CACHE_ENABLED=true)
 #     search = + meilisearch            (SEARCH_ENABLED=true)
 #     full   = + redis + meilisearch    (both enabled)
+#     edge   = full + HAProxy TLS edge -> Service/web -> Rails x3
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
@@ -21,8 +22,8 @@ IMAGE="${K8S_IMAGE:-software_arch_team_4:k8s}"
 NAMESPACE="software-arch-team4"
 
 case "$OVERLAY" in
-  base|cache|search|full) ;;
-  *) echo "error: unknown overlay '$OVERLAY' (use: base|cache|search|full)"; exit 1 ;;
+  base|cache|search|full|edge) ;;
+  *) echo "error: unknown overlay '$OVERLAY' (use: base|cache|search|full|edge)"; exit 1 ;;
 esac
 
 if [ "$OVERLAY" = "base" ]; then
@@ -30,6 +31,7 @@ if [ "$OVERLAY" = "base" ]; then
 else
   KUSTOMIZE_DIR="$ROOT/k8s/overlays/$OVERLAY"
 fi
+
 [ -d "$KUSTOMIZE_DIR" ] || {
   echo "error: kustomize dir not found: $KUSTOMIZE_DIR"
   exit 1
@@ -71,6 +73,12 @@ else
   echo "==> Secret app-secret already exists, skipping creation (delete it first to regenerate)"
 fi
 
+if [ "$OVERLAY" = "edge" ] && ! kubectl -n "$NAMESPACE" get secret haproxy-tls >/dev/null 2>&1; then
+  echo "==> Creating local-development TLS secret for HAProxy..."
+  kubectl -n "$NAMESPACE" create secret generic haproxy-tls \
+    --from-file=self-signed.pem="$ROOT/haproxy/certs/self-signed.pem"
+fi
+
 echo "==> Applying manifests (kustomize, overlay=$OVERLAY)..."
 kubectl apply -k "$KUSTOMIZE_DIR"
 
@@ -78,7 +86,7 @@ echo "==> Waiting for deployments..."
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/mongodb --timeout=120s
 kubectl -n "$NAMESPACE" wait --for=condition=available deployment/web --timeout=120s
 # Extra services may exist depending on overlay (redis / meilisearch)
-for dep in redis meilisearch; do
+for dep in redis meilisearch haproxy; do
   if kubectl -n "$NAMESPACE" get deployment "$dep" >/dev/null 2>&1; then
     echo "==> Waiting for deployment/$dep..."
     kubectl -n "$NAMESPACE" wait --for=condition=available "deployment/$dep" --timeout=120s
@@ -95,9 +103,14 @@ echo "==> Ready! k8s stack is up (k3d-only, overlay=$OVERLAY)."
 kubectl -n "$NAMESPACE" get pods,svc,pvc
 echo ""
 echo "Access app via:"
-echo "  kubectl -n $NAMESPACE port-forward svc/web 3000:80"
-echo "  curl http://localhost:3000/up   # expect 200"
+if [ "$OVERLAY" = "edge" ]; then
+  echo "  kubectl -n $NAMESPACE port-forward svc/haproxy 8080:80 8443:443"
+  echo "  curl -H 'Host: app.localhost' http://localhost:8080/up   # expect 200"
+else
+  echo "  kubectl -n $NAMESPACE port-forward svc/web 3000:80"
+  echo "  curl http://localhost:3000/up   # expect 200"
+fi
 echo ""
 echo "Rancher: k3d kubeconfig get $CLUSTER -> Import Existing Cluster in Rancher UI -> see namespace $NAMESPACE"
 echo ""
-echo "To change variant (after bin/k8s-down): bin/k8s-up [base|cache|search|full]"
+echo "To change variant (after bin/k8s-down): bin/k8s-up [base|cache|search|full|edge]"

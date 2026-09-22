@@ -6,6 +6,8 @@ Isolated manifests in `k8s/` — does not modify `Dockerfile*`, `docker-compose.
 * **`k8s/overlays/cache/`** — base + Redis (`CACHE_ENABLED=true`).
 * **`k8s/overlays/search/`** — base + Meilisearch (`SEARCH_ENABLED=true`).
 * **`k8s/overlays/full/`** — base + Redis + Meilisearch (both enabled).
+* **`k8s/overlays/edge/`** — full + HAProxy TLS edge. HAProxy targets only
+  the stable `web:80` Service, which distributes to the three Rails replicas.
 
 Rancher is an optional UI that imports the existing `k3d` cluster — see `## Rancher Integration` after Cleanup.
 
@@ -13,11 +15,12 @@ Rancher is an optional UI that imports the existing `k3d` cluster — see `## Ra
 
 ```bash
 # From repository root, like docker compose up --build:
-#   base (default) | cache | search | full
+#   base (default) | cache | search | full | edge
 bin/k8s-up [base]          # as-is: web + mongodb
 bin/k8s-up cache           # + Redis
 bin/k8s-up search          # + Meilisearch
 bin/k8s-up full            # + Redis + Meilisearch
+bin/k8s-up edge            # + HAProxy TLS -> Service/web -> Rails x3
 ```
 
 View the application (requires an extra terminal — `ClusterIP` is internal):
@@ -93,7 +96,7 @@ kubectl -n software-arch-team4 create secret generic app-secret \
 ## 4. Deploy (after secret exists) — pick one of the 4 variants
 
 ```bash
-# Choose the overlay you want: base | cache | search | full
+# Choose the overlay you want: base | cache | search | full | edge
 OVERLAY=base   # or cache / search / full
 
 # Option A: kustomize (secret excluded as above - create it first in step 3)
@@ -122,6 +125,25 @@ kubectl -n software-arch-team4 wait --for=condition=available deployment/meilise
 # Seed (reindexes Meilisearch + clears cache automatically when enabled)
 kubectl -n software-arch-team4 exec deploy/web -- bin/rails db:seed
 ```
+
+### HAProxy edge (Assignment 4)
+
+The `edge` overlay requires an additional local-development TLS Secret. It is
+created automatically by `bin/k8s-up edge`; for a manual deployment create it
+without committing its PEM contents:
+
+```sh
+kubectl -n software-arch-team4 create secret generic haproxy-tls \
+  --from-file=self-signed.pem=haproxy/certs/self-signed.pem
+kubectl apply -k k8s/overlays/edge
+kubectl -n software-arch-team4 rollout status deployment/haproxy --timeout=120s
+kubectl -n software-arch-team4 port-forward svc/haproxy 8080:80 8443:443
+```
+
+Then use `http://app.localhost:8080` with `Host: app.localhost`, or HTTPS on
+8443 using the local development certificate. HAProxy is the public entrypoint;
+Rails remains the origin for a static cache miss, while later asset/image hits
+are served from HAProxy's cache. `SERVE_STATIC=true` is therefore intentional.
 
 ## 5. Verification (required by assignment)
 

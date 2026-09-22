@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: images-data
+  namespace: software-arch-team4
+  labels:
+    app: web
+    app.kubernetes.io/name: software_arch_team_4
+spec:
+  # k3d local-path: RWO allows several Pods on the SAME node to share files.
+  # This is not multi-node storage. See k8s/SCALING.md before adding nodes.
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # Uses the existing cluster default StorageClass (local-path in local k3d).

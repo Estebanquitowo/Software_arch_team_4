@@ -50,7 +50,7 @@ This project supports two deployment methods that run the same application image
 *   **ConfigMap / Secret** — injects configuration (`MONGODB_URI`, `RAILS_ENV`) and credentials (`HARDCOVER_API_TOKEN`, `SECRET_KEY_BASE`) at runtime without baking them into the image
 *   **Rancher** — optional management UI for the existing `k3d` cluster. No Rancher manifests are included; import the cluster with `k3d kubeconfig get dev` via Rancher's *Import Existing* workflow. See `k8s/README.md` for details.
 
-  Like Docker Compose, Kubernetes provides **4 variants** via kustomize base + overlays (`bin/k8s-up [base|cache|search|full]`) to enable optional Redis caching and Meilisearch search. HAProxy for Kubernetes is planned for the edge (Phase 16) and not yet included.
+  Like Docker Compose, Kubernetes provides **5 variants** via kustomize base + overlays (`bin/k8s-up [base|cache|search|full|edge]`). The `edge` variant adds HAProxy in front of the stable `web` Service, with Redis and Meilisearch enabled.
 
 ### Reverse Proxy (HAProxy)
 
@@ -58,7 +58,7 @@ This project supports two deployment methods that run the same application image
 
 * **Edge entrypoint:** `haproxy:3.0-alpine` with `frontend http_front` binding `*:80` and `*:443 ssl crt /usr/local/etc/haproxy/certs/self-signed.pem`. TLS is terminated at the proxy, `web` speaks plain HTTP (`3000`).
 * **Custom domain:** ACL `host_app hdr(host) -i app.localhost localhost` — app is served under `app.localhost` (`*.localhost` resolves to `127.0.0.1` via systemd-resolved). Requests with other `Host` are `403`.
-* **Static at edge:** `image_data:/data/images:ro` mounted to HAProxy, `acl is_images/is_assets` + `cache static_cache` (`total-max-size 128`, `max-object-size 10M`, `max-age 86400`). First fetch goes to `web` (`ImagesController` via shared volume), HAProxy stores (`http-response cache-store`) and serves `Cache-Control: public, max-age=86400` on hits (`<CACHE>` in logs, `Age` header). `SERVE_STATIC=false` when proxy is present (fallback `true` without proxy).
+* **Static at edge:** `image_data:/data/images:ro` mounted to HAProxy, `acl is_images/is_assets` + `cache static_cache` (`total-max-size 128`, `max-object-size 10M`, `max-age 86400`). Rails is the origin on a first miss; HAProxy stores a successful response and later requests are served at the edge (`<CACHE>` in logs, `Age` header). `SERVE_STATIC=true` remains enabled so cache misses are valid.
 * **Load balancing:** `docker-compose.scale.yml` runs `web` with `deploy: replicas: 3` (Compose v2, no Swarm) + `resolvers docker (127.0.0.11:53)` + `server-template web 3 web:3000 resolvers docker ... check` `balance roundrobin`. Explicit `web1/web2/web3` fallback is documented in `haproxy.scale.cfg`. Health checks are `GET /up` with `Host: localhost`.
 * **Certs:** `haproxy/certs/self-signed.pem` (crt+key) generated for `app.localhost`. See *HTTPS* below.
 
@@ -71,7 +71,7 @@ The app implements **optional** components via Strategy pattern:
 * **Cache:** `Redis` (`redis:7-alpine`) with `Rails.cache = :redis_cache_store`. If `REDIS_URL` unreachable/missing → gracefully falls back to `:memory_store` (`CacheService.fetch` rescues and yields directly, so requests never 500).
 * **Search:** `Meilisearch` (`getmeili/meilisearch:v1.12`) with `meilisearch-rails`. If `MEILISEARCH_URL` unreachable/missing → gracefully falls back to native MongoDB regex/`$text` search (`SearchService`).
 * **Uploads:** book covers and author images are stored under `IMAGE_STORAGE_PATH` (default `/data/images`; the compose files mount a shared `image_data` volume there) and served at `/images/<relative>` by `ImagesController`. In multi-instance deployments all instances must share this storage path.
-* **Static assets:** the app serves `public/` files and `/images/*` uploads by default (`SERVE_STATIC=true`). When a reverse proxy is present, `SERVE_STATIC=false` — app stops serving via `public_file_server` and `ImagesController` fallback, HAProxy owns `/images/*`/`/assets/*` at the edge with shared `image_data:ro` and `static_cache`.
+* **Static assets:** the app serves `public/` files and `/images/*` uploads as the origin (`SERVE_STATIC=true`). With HAProxy, clients still access those paths through the edge; HAProxy caches successful static responses without contacting Rails on a hit.
 * **Proxy:** `haproxy:3.0-alpine` terminates TLS, enforces `app.localhost` ACL, and proxies to `web:3000` with health `GET /up`. See `haproxy/haproxy.cfg` (single) and `haproxy/haproxy.scale.cfg` (3× via `resolvers docker` + `server-template`).
 * **Hosts:** Rails `config.hosts` now allows `app.localhost`, `web`, `haproxy`, `*.localhost` for HAProxy health checks and custom domain (see `config/environments/development.rb`).
 
@@ -82,9 +82,9 @@ Compose files:
 | `docker-compose.yml` | `web` + `mongodb` | `CACHE_ENABLED=false` `SEARCH_ENABLED=false` `SERVE_STATIC=true` — `web 3000:3000` | **Baseline, no proxy** — backward compat `http://localhost:3000` |
 | `docker-compose.cache.yml` | + `redis` | `CACHE_ENABLED=true` `SERVE_STATIC=true` — `3000:3000` | Cache only, no proxy |
 | `docker-compose.search.yml` | + `meilisearch` | `SEARCH_ENABLED=true` `SERVE_STATIC=true` — `3000:3000` | Search only, no proxy |
-| `docker-compose.proxy.yml` | `web`+`mongodb`+`haproxy` | `SERVE_STATIC=false` — `web expose:3000`, `haproxy 80:80 443:443` | **App+DB+Proxy** (Phase 9) |
-| `docker-compose.full.yml` | `web`+`mongodb`+`redis`+`meilisearch`+`haproxy` | `CACHE/SEARCH=true` `SERVE_STATIC=false` — `haproxy 80:80 443:443` | **Full + Proxy** (Phase 10) |
-| `docker-compose.scale.yml` | `web×3`+`mongodb`+`redis`+`meilisearch`+`haproxy` | `replicas:3` + `server-template 3` `SERVE_STATIC=false` — `haproxy 80:80 443:443` | **×3 + LB + Cache + Search** (Phase 11) |
+| `docker-compose.proxy.yml` | `web`+`mongodb`+`haproxy` | `SERVE_STATIC=true` — `web expose:3000`, `haproxy 80:80 443:443` | **App+DB+Proxy** (Phase 9) |
+| `docker-compose.full.yml` | `web`+`mongodb`+`redis`+`meilisearch`+`haproxy` | `CACHE/SEARCH=true` `SERVE_STATIC=true` — `haproxy 80:80 443:443` | **Full + Proxy** (Phase 10) |
+| `docker-compose.scale.yml` | `web×3`+`mongodb`+`redis`+`meilisearch`+`haproxy` | `replicas:3` + `server-template 3` `SERVE_STATIC=true` — `haproxy 80:80 443:443` | **×3 + LB + Cache + Search** (Phase 11) |
 
 > **Port strategy:** Baseline keeps `3000:3000` so `docker compose up` and old docs still work. Proxy-enabled files deliberately remove the host port from `web` (`expose: 3000` only) and bind HAProxy to standard edge ports `80:80` + `443:443`. `https://app.localhost:3000` is intentionally not used — edge should be `https://app.localhost` (or `http://localhost` for quick test).
 
@@ -146,7 +146,7 @@ chmod 644 haproxy/certs/self-signed.pem haproxy/certs/app.localhost.crt
 # HAProxy loads it via: bind *:443 ssl crt /usr/local/etc/haproxy/certs/self-signed.pem
 ```
 
-`haproxy` mounts `haproxy/certs:ro` and `image_data:/data/images:ro`. Rails `SERVE_STATIC=false` when proxy is present, so `public_file_server` is not relied on — edge serves `/images/*`/`/assets/*`.
+`haproxy` mounts `haproxy/certs:ro` and `image_data:/data/images:ro`. Rails remains the cache-miss origin; HAProxy caches `/images/*`/`/assets/*` after the first 200 response.
 
 Custom domain: `app.localhost` resolves to `127.0.0.1` via `systemd-resolved` (no `/etc/hosts` edit needed on Ubuntu/WSL). HAProxy enforces it:
 
@@ -178,7 +178,7 @@ curl -i -H "Host: evil.com" http://127.0.0.1:80/up # 403
 curl -i http://localhost/icon.svg  # then:
 curl -i http://localhost/icon.svg # -> <CACHE> in haproxy logs, Age: 0
 docker logs software_arch_haproxy | grep icon.svg
-# 5) Uploaded images via shared volume (SERVE_STATIC=false, cache)
+# 5) Uploaded images via shared volume (Rails origin on miss, HAProxy cache)
 # create an image via UI http://app.localhost/books/new or via runner, then:
 curl -i http://localhost/images/books/<file>.png
 docker logs software_arch_haproxy | grep images # 1 backend, next -> <CACHE>

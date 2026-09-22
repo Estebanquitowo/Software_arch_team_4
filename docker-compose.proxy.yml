@@ -30,12 +30,14 @@ services:
       CACHE_ENABLED: "false"
       SEARCH_ENABLED: "false"
       IMAGE_STORAGE_PATH: ${IMAGE_STORAGE_PATH:-/data/images}
-      SERVE_STATIC: "false"
+      SERVE_STATIC: "true"
     depends_on:
       - mongodb
 
   haproxy:
     image: haproxy:3.0-alpine
+    environment:
+      RAILS_BACKEND: web:3000
     container_name: software_arch_haproxy
     restart: always
     ports:

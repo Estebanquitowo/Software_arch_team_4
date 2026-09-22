@@ -66,7 +66,7 @@ services:
       MEILISEARCH_URL: http://meilisearch:7700
       MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
       IMAGE_STORAGE_PATH: ${IMAGE_STORAGE_PATH:-/data/images}
-      SERVE_STATIC: "false"
+      SERVE_STATIC: "true"
     depends_on:
       mongodb:
         condition: service_started
@@ -77,6 +77,8 @@ services:
 
   haproxy:
     image: haproxy:3.0-alpine
+    environment:
+      RAILS_BACKEND: web:3000
     container_name: software_arch_haproxy
     restart: always
     ports:
