@@ -1,0 +1,82 @@
+==========================================================
+Test: static | Volume: 1 requests | Target: https://app.localhost/images/books/074c88e2c7f294af.jpg
+Timestamp: Wed Sep 23 21:23:19 UTC 2026
+==========================================================
+--- Sending Warm-Up Request ---
+Warm-up HTTP Status: 200 | Total Time: 0.136627s
+
+--- Resource Baseline BEFORE Test ---
+NAME                         CPU %     MEM USAGE / LIMIT
+software_arch_haproxy        0.03%     153.3MiB / 15.27GiB
+software_arch_team_4-web-1   0.02%     86.78MiB / 15.27GiB
+software_arch_team_4-web-3   0.02%     85.33MiB / 15.27GiB
+software_arch_team_4-web-2   0.01%     109.6MiB / 15.27GiB
+software_arch_redis          0.34%     6.027MiB / 15.27GiB
+software_arch_mongodb        0.64%     188.3MiB / 15.27GiB
+software_arch_meilisearch    0.14%     9.461MiB / 15.27GiB
+
+--- k6 Execution Output ---
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: -
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 1       126.089699/s
+    checks_succeeded...: 100.00% 1 out of 1
+    checks_failed......: 0.00%   0 out of 1
+
+    ✓ status is 200
+
+    HTTP
+    http_req_duration..............: avg=2ms    min=2ms    med=2ms    max=2ms    p(90)=2ms    p(95)=2ms   
+      { expected_response:true }...: avg=2ms    min=2ms    med=2ms    max=2ms    p(90)=2ms    p(95)=2ms   
+    http_req_failed................: 0.00%  0 out of 1
+    http_reqs......................: 1      126.089699/s
+
+    EXECUTION
+    iteration_duration.............: avg=7.78ms min=7.78ms med=7.78ms max=7.78ms p(90)=7.78ms p(95)=7.78ms
+    iterations.....................: 1      126.089699/s
+
+    NETWORK
+    data_received..................: 61 kB  7.7 MB/s
+    data_sent......................: 2.1 kB 260 kB/s
+
+
+
+
+running (00m00.0s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m00.0s/10m0s  1/1 shared iters
+
+--- Resource Usage AFTER/PEAK Test ---
+NAME                         CPU %     MEM USAGE / LIMIT
+software_arch_haproxy        0.07%     152.4MiB / 15.27GiB
+software_arch_team_4-web-1   0.50%     86.65MiB / 15.27GiB
+software_arch_team_4-web-3   0.02%     84.72MiB / 15.27GiB
+software_arch_team_4-web-2   0.02%     109MiB / 15.27GiB
+software_arch_redis          0.41%     5.312MiB / 15.27GiB
+software_arch_mongodb        0.88%     187.1MiB / 15.27GiB
+software_arch_meilisearch    0.10%     9.922MiB / 15.27GiB
+
+--- Process Thread Counts ---
+Container software_arch_haproxy: 20 threads
+Container software_arch_team_4-web-1: 11 threads
+Container software_arch_team_4-web-3: 11 threads
+Container software_arch_team_4-web-2: 11 threads
+Container software_arch_redis: 9 threads
+Container software_arch_mongodb: 49 threads
+Container software_arch_meilisearch: 23 threads
+==========================================================

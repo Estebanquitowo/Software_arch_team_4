@@ -1,0 +1,102 @@
+==========================================================
+Test: search | Volume: 1000 requests | Target: https://app.localhost/search?query=the
+Timestamp: Wed Sep 23 21:18:46 UTC 2026
+==========================================================
+--- Sending Warm-Up Request ---
+Warm-up HTTP Status: 200 | Total Time: 0.012562s
+
+--- Resource Baseline BEFORE Test ---
+NAME                        CPU %     MEM USAGE / LIMIT
+software_arch_haproxy       0.00%     158MiB / 15.27GiB
+software_arch_web           0.19%     176.6MiB / 15.27GiB
+software_arch_redis         0.41%     5.598MiB / 15.27GiB
+software_arch_mongodb       0.72%     194.7MiB / 15.27GiB
+software_arch_meilisearch   0.12%     11.16MiB / 15.27GiB
+
+--- k6 Execution Output ---
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: -
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 50 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1000 iterations shared among 50 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+
+running (00m01.0s), 50/50 VUs, 118 complete and 0 interrupted iterations
+default   [  12% ] 50 VUs  00m01.0s/10m0s  0118/1000 shared iters
+
+running (00m02.0s), 50/50 VUs, 244 complete and 0 interrupted iterations
+default   [  24% ] 50 VUs  00m02.0s/10m0s  0244/1000 shared iters
+
+running (00m03.0s), 50/50 VUs, 366 complete and 0 interrupted iterations
+default   [  37% ] 50 VUs  00m03.0s/10m0s  0366/1000 shared iters
+
+running (00m04.0s), 50/50 VUs, 483 complete and 0 interrupted iterations
+default   [  48% ] 50 VUs  00m04.0s/10m0s  0483/1000 shared iters
+
+running (00m05.0s), 50/50 VUs, 610 complete and 0 interrupted iterations
+default   [  61% ] 50 VUs  00m05.0s/10m0s  0610/1000 shared iters
+
+running (00m06.0s), 50/50 VUs, 732 complete and 0 interrupted iterations
+default   [  73% ] 50 VUs  00m06.0s/10m0s  0732/1000 shared iters
+
+running (00m07.0s), 50/50 VUs, 856 complete and 0 interrupted iterations
+default   [  86% ] 50 VUs  00m07.0s/10m0s  0856/1000 shared iters
+
+running (00m08.0s), 24/50 VUs, 976 complete and 0 interrupted iterations
+default   [  98% ] 50 VUs  00m08.0s/10m0s  0976/1000 shared iters
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 1000    122.292248/s
+    checks_succeeded...: 100.00% 1000 out of 1000
+    checks_failed......: 0.00%   0 out of 1000
+
+    ✓ status is 200
+
+    HTTP
+    http_req_duration..............: avg=397.99ms min=27.58ms med=402.01ms max=473.48ms p(90)=434.63ms p(95)=445.52ms
+      { expected_response:true }...: avg=397.99ms min=27.58ms med=402.01ms max=473.48ms p(90)=434.63ms p(95)=445.52ms
+    http_req_failed................: 0.00%  0 out of 1000
+    http_reqs......................: 1000   122.292248/s
+
+    EXECUTION
+    iteration_duration.............: avg=398.93ms min=39.36ms med=402.32ms max=477.72ms p(90)=434.82ms p(95)=446.4ms 
+    iterations.....................: 1000   122.292248/s
+    vus............................: 24     min=24        max=50
+    vus_max........................: 50     min=50        max=50
+
+    NETWORK
+    data_received..................: 7.7 MB 939 kB/s
+    data_sent......................: 173 kB 21 kB/s
+
+
+
+
+running (00m08.2s), 00/50 VUs, 1000 complete and 0 interrupted iterations
+default ✓ [ 100% ] 50 VUs  00m08.2s/10m0s  1000/1000 shared iters
+
+--- Resource Usage AFTER/PEAK Test ---
+NAME                        CPU %     MEM USAGE / LIMIT
+software_arch_haproxy       0.00%     156.9MiB / 15.27GiB
+software_arch_web           0.29%     186MiB / 15.27GiB
+software_arch_redis         0.40%     4.223MiB / 15.27GiB
+software_arch_mongodb       0.71%     194.1MiB / 15.27GiB
+software_arch_meilisearch   0.13%     8.516MiB / 15.27GiB
+
+--- Process Thread Counts ---
+Container software_arch_haproxy: 20 threads
+Container software_arch_web: 16 threads
+Container software_arch_redis: 8 threads
+Container software_arch_mongodb: 54 threads
+Container software_arch_meilisearch: 23 threads
+==========================================================

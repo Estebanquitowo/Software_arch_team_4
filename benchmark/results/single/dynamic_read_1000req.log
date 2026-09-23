@@ -1,0 +1,129 @@
+==========================================================
+Test: dynamic_read | Volume: 1000 requests | Target: https://app.localhost/books/6a867bf64d01d5c7c51115c4
+Timestamp: Wed Sep 23 21:20:21 UTC 2026
+==========================================================
+--- Sending Warm-Up Request ---
+Warm-up HTTP Status: 200 | Total Time: 0.022447s
+
+--- Resource Baseline BEFORE Test ---
+NAME                        CPU %     MEM USAGE / LIMIT
+software_arch_haproxy       0.00%     157.9MiB / 15.27GiB
+software_arch_web           0.01%     183.4MiB / 15.27GiB
+software_arch_redis         2.20%     5.832MiB / 15.27GiB
+software_arch_mongodb       0.65%     194.6MiB / 15.27GiB
+software_arch_meilisearch   0.13%     10.21MiB / 15.27GiB
+
+--- k6 Execution Output ---
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: -
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 50 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1000 iterations shared among 50 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+
+running (00m01.0s), 50/50 VUs, 57 complete and 0 interrupted iterations
+default   [   6% ] 50 VUs  00m01.0s/10m0s  0057/1000 shared iters
+
+running (00m02.0s), 50/50 VUs, 115 complete and 0 interrupted iterations
+default   [  12% ] 50 VUs  00m02.0s/10m0s  0115/1000 shared iters
+
+running (00m03.0s), 50/50 VUs, 175 complete and 0 interrupted iterations
+default   [  18% ] 50 VUs  00m03.0s/10m0s  0175/1000 shared iters
+
+running (00m04.0s), 50/50 VUs, 231 complete and 0 interrupted iterations
+default   [  23% ] 50 VUs  00m04.0s/10m0s  0231/1000 shared iters
+
+running (00m05.0s), 50/50 VUs, 288 complete and 0 interrupted iterations
+default   [  29% ] 50 VUs  00m05.0s/10m0s  0288/1000 shared iters
+
+running (00m06.0s), 50/50 VUs, 342 complete and 0 interrupted iterations
+default   [  34% ] 50 VUs  00m06.0s/10m0s  0342/1000 shared iters
+
+running (00m07.0s), 50/50 VUs, 402 complete and 0 interrupted iterations
+default   [  40% ] 50 VUs  00m07.0s/10m0s  0402/1000 shared iters
+
+running (00m08.0s), 50/50 VUs, 460 complete and 0 interrupted iterations
+default   [  46% ] 50 VUs  00m08.0s/10m0s  0460/1000 shared iters
+
+running (00m09.0s), 50/50 VUs, 516 complete and 0 interrupted iterations
+default   [  52% ] 50 VUs  00m09.0s/10m0s  0516/1000 shared iters
+
+running (00m10.0s), 50/50 VUs, 572 complete and 0 interrupted iterations
+default   [  57% ] 50 VUs  00m10.0s/10m0s  0572/1000 shared iters
+
+running (00m11.0s), 50/50 VUs, 635 complete and 0 interrupted iterations
+default   [  64% ] 50 VUs  00m11.0s/10m0s  0635/1000 shared iters
+
+running (00m12.0s), 50/50 VUs, 690 complete and 0 interrupted iterations
+default   [  69% ] 50 VUs  00m12.0s/10m0s  0690/1000 shared iters
+
+running (00m13.0s), 50/50 VUs, 749 complete and 0 interrupted iterations
+default   [  75% ] 50 VUs  00m13.0s/10m0s  0749/1000 shared iters
+
+running (00m14.0s), 50/50 VUs, 805 complete and 0 interrupted iterations
+default   [  80% ] 50 VUs  00m14.0s/10m0s  0805/1000 shared iters
+
+running (00m15.0s), 50/50 VUs, 864 complete and 0 interrupted iterations
+default   [  86% ] 50 VUs  00m15.0s/10m0s  0864/1000 shared iters
+
+running (00m16.0s), 50/50 VUs, 921 complete and 0 interrupted iterations
+default   [  92% ] 50 VUs  00m16.0s/10m0s  0921/1000 shared iters
+
+running (00m17.0s), 26/50 VUs, 974 complete and 0 interrupted iterations
+default   [  97% ] 50 VUs  00m17.0s/10m0s  0974/1000 shared iters
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 1000    57.305756/s
+    checks_succeeded...: 100.00% 1000 out of 1000
+    checks_failed......: 0.00%   0 out of 1000
+
+    ✓ status is 200
+
+    HTTP
+    http_req_duration..............: avg=849.59ms min=49.69ms med=865.26ms max=963.16ms p(90)=917.45ms p(95)=931.8ms 
+      { expected_response:true }...: avg=849.59ms min=49.69ms med=865.26ms max=963.16ms p(90)=917.45ms p(95)=931.8ms 
+    http_req_failed................: 0.00%  0 out of 1000
+    http_reqs......................: 1000   57.305756/s
+
+    EXECUTION
+    iteration_duration.............: avg=850.87ms min=65.95ms med=865.52ms max=963.33ms p(90)=917.59ms p(95)=931.96ms
+    iterations.....................: 1000   57.305756/s
+    vus............................: 26     min=26        max=50
+    vus_max........................: 50     min=50        max=50
+
+    NETWORK
+    data_received..................: 18 MB  1.0 MB/s
+    data_sent......................: 176 kB 10 kB/s
+
+
+
+
+running (00m17.5s), 00/50 VUs, 1000 complete and 0 interrupted iterations
+default ✓ [ 100% ] 50 VUs  00m17.5s/10m0s  1000/1000 shared iters
+
+--- Resource Usage AFTER/PEAK Test ---
+NAME                        CPU %     MEM USAGE / LIMIT
+software_arch_haproxy       0.00%     156.9MiB / 15.27GiB
+software_arch_web           0.54%     183.1MiB / 15.27GiB
+software_arch_redis         2.27%     5.227MiB / 15.27GiB
+software_arch_mongodb       0.57%     193.9MiB / 15.27GiB
+software_arch_meilisearch   1.93%     10.83MiB / 15.27GiB
+
+--- Process Thread Counts ---
+Container software_arch_haproxy: 20 threads
+Container software_arch_web: 16 threads
+Container software_arch_redis: 9 threads
+Container software_arch_mongodb: 54 threads
+Container software_arch_meilisearch: 23 threads
+==========================================================
