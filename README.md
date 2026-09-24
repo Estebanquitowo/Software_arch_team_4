@@ -270,218 +270,76 @@ Isolated manifests in `k8s/` (base + overlays) — does not modify `Dockerfile*`
     k3d cluster delete dev  # full cleanup
     ```
 
-### Verify Cluster (required by Assignment 2)
-```sh
-# a) Reachable through Service
-kubectl -n software-arch-team4 port-forward svc/web 3000:80 
-# In another terminal, do the following command
-curl -i http://localhost:3000/up   # should throw 200
-```
+## Running Load Tests & Benchmarks
+
+This repository includes a benchmark suite using [Grafana k6](https://k6.io/) to measure response latencies ($p50$, $p95$), request throughput, container resource usage (CPU/memory), and OS thread counts across both single-instance and horizontally scaled deployments.
+
+### Prerequisites & Setup
+
+1. **Seed Database and Search Engine:**
+    Ensure MongoDB and Meilisearch contain test data:
+    ```sh
+    docker compose -f docker-compose.full.yml up -d
+    docker compose -f docker-compose.full.yml exec web bin/rails db:seed
+    docker compose -f docker-compose.full.yml exec web bin/rake search:reindex
+    ```
+
+1. **Upload a Test Image (Required for Static Asset Benchmark):**
+    Default seed records do not include cover or author images. Before executing the static asset benchmark, an image must be manually uploaded via the web interface:
+    
+    1. Open [https://app.localhost](https://app.localhost) in your browser.
+    1. Navigate to Books, select any book (e.g., /books/<id>), and click "Edit this book".
+    1. Upload an image (.png or .jpg) and save the changes.
+    1. On the updated book page, right-click the cover image and copy its image address. The URL structure matches:
+        ```sh
+        http://app.localhost/images/books/<image_id>.jpg
+        ```
+    1. Open `benchmark/run_benchmarks_single.sh` and `benchmark/run_benchmarks_scale.sh`, and replace the static URL to match your uploaded image path (line 11 on both):
+        ```sh
+        "static:https://app.localhost/images/books/<YOUR_IMAGE_ID>.jpg"
+        ```
+
+### Executing the Benchmarks
+
+All execution scripts are located in the `benchmark/` directory. Although test have already been ran, you may want to execute them again. It is not neccesary to initialize the docker containers, since both benchmarks do so inside of their bash code.
+
+#### 1. Single-Instance Benchmark (`docker-compose.full.yml`)
+
+Tests all four endpoints across 1, 10, 100, 1,000, and 5,000 request tiers against the single-instance stack:
 
 ```sh
-# b) Self-healing: pod recreated automatically
-kubectl -n software-arch-team4 delete pod -l app=web
-kubectl -n software-arch-team4 get pods   # wait for new web pod to be READY
-# Repeat "a)" steps:
-kubectl -n software-arch-team4 port-forward svc/web 3000:80 
-# In another terminal, do the following command
-curl -i http://localhost:3000/up   # should throw 200
+chmod +x benchmark/*.sh
+./benchmark/run_benchmarks_single.sh
 ```
+
+Outputs are saved to `benchmark/results/single/`.
+
+#### 2. Scaled 3-Instance Benchmark (`docker-compose.scale.yml`)
+
+Deploys the 3-replica load-balanced architecture and runs the identical 20-run benchmark suite:
 
 ```sh
-# c) PVC survives restart
-kubectl -n software-arch-team4 exec deploy/mongodb -- mongosh --eval 'db.getSiblingDB("software_arch_team4_development").test_persistence.insertOne({check:"before-restart"})'
-kubectl -n software-arch-team4 delete pod -l app=mongodb
-kubectl -n software-arch-team4 wait --for=condition=available deployment/mongodb --timeout=120s
-kubectl -n software-arch-team4 exec deploy/mongodb -- mongosh --eval 'db.getSiblingDB("software_arch_team4_development").test_persistence.findOne({check:"before-restart"})' # still exists
+./benchmark/run_benchmarks_scale.sh
 ```
 
-## Verify Caching & Search (required by Assignment 3)
+Outputs are saved to benchmark/results/scaled/.
 
-The target configuration for these correctness tests is the **full** variant (`web` + `mongodb` + `redis` + `meilisearch`). `db:seed` now also **clears the cache** and **reindexes Meilisearch** automatically when those features are enabled.
+### Parsing and Viewing Results
+
+To aggregate all output logs into a consolidated Markdown table reporting success rates, average latency, $p95$ tail latency, and peak container CPU utilization, run:
 
 ```sh
-# 1) Bring up the full stack (code is volume-mounted, so changes are live)
-# full now runs behind HAProxy at 80/443 (web not on :3000):
-docker compose -f docker-compose.full.yml up -d --build
-
-# 2) Seed the database (also clears cache + reindexes when available)
-docker compose -f docker-compose.full.yml exec web bin/rails db:seed
-# for scale with replicas: docker exec software_arch_team_4-web-1 bin/rails db:seed
-
-# 3) Optional: start cold, so the first request below is a real cache miss
-docker compose -f docker-compose.full.yml exec web bin/rails cache:clear
+./benchmark/parse_results.sh
 ```
 
-### a) Reading an item caches/indexes it
-
-Hit every cached endpoint. The first request is a cache **miss**: it reads MongoDB and fills the cache (`CacheService.fetch`). Repeat a request right after `cache:clear` and the second call is served from the cache.
-
-> **Ports:** `docker-compose.full.yml`/`proxy`/`scale` are behind HAProxy — use `http://app.localhost` (or `http://localhost` on `:80`, `https://app.localhost` with `-k`) without `:3000`. Baseline `docker-compose.yml`/`cache`/`search` (no proxy) still use `http://localhost:3000`.
+To run a single targeted endpoint test manually, use the individual runner script:
 
 ```sh
-# via HAProxy edge (full/proxy/scale)
-curl -s "http://app.localhost/reports/authors_summary"   >/dev/null
-curl -s "http://app.localhost/reports/top_rated_books"   >/dev/null
-curl -s "http://app.localhost/reports/top_selling_books" >/dev/null
-curl -s "http://app.localhost/books"                     >/dev/null
-curl -s "http://app.localhost/search?q=war"              >/dev/null
-# or: curl -s "http://localhost/reports/authors_summary" >/dev/null
-# baseline without proxy:
-# curl -s "http://localhost:3000/reports/authors_summary" >/dev/null
+./benchmark/run_benchmarks.sh <name> <target_url> <request_count> [single|scaled]
+
+# Example:
+./benchmark/run_benchmarks.sh aggregation "https://app.localhost/reports/top_selling_books" 1000 single
 ```
-
-Proof the cache was filled (Redis keys now exist):
-
-```sh
-docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'reports/*'
-docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'books/*'
-docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'search/*'
-```
-
-Proof books are indexed (Meilisearch document count == `Book.count`):
-
-```sh
-curl -s "http://localhost:7700/indexes/books/stats" -H "Authorization: Bearer dev-master-key"
-```
-
-### b) Add / edit / delete items through the app
-
-Through the UI at `http://app.localhost` (`https://app.localhost -k` for TLS) or `http://localhost:3000` for baseline:
-
-* Add/edit/delete a **review** — `/books/<id>` → *New Review* (also reachable at `/books/<id>/reviews`).
-* Add/edit/delete a **sale** — `/books/<id>` → *New Sale*.
-* Edit or delete a **book** — `/books/<id>/edit`.
-* Edit an **author** — `/authors/<id>/edit`, then reload `/reports/authors_summary` (sorted by name).
-
-Or script the mutation with `rails runner` (print the book id/title to use below):
-
-```sh
-docker compose -f docker-compose.full.yml exec web bin/rails runner '
-  b = Book.first
-  puts "id=#{b.id} title=#{b.title}"
-  b.reviews.create!(rating: 5, title: "QA Test", content: "zephyrx", reviewer_name: "QA")
-  puts "avg_score=" + b.reload.avg_score.to_s
-'
-```
-
-### c) A later read returns the updated value and search reflects the change
-
-**Cache invalidation** — the mutation above triggered `Book#after_save` → `delete_matched("reports/*", "books/*", "search/*")`, so the affected keys are gone immediately:
-
-```sh
-docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'reports/*'   # emptied for that resource
-```
-
-**Read returns fresh data** — the search results table shows the recomputed `avg_score`:
-
-```sh
-curl -s "http://app.localhost/search?q=zephyrx"        # matched via the indexed review text
-curl -s "http://app.localhost/reports/top_rated_books" # recomputed after invalidation
-# baseline: curl -s "http://localhost:3000/search?q=zephyrx"
-```
-
-**Index is synchronized** — editing the book's summary is searchable right away (`meilisearch synchronous: true`):
-
-```sh
-docker compose -f docker-compose.full.yml exec web bin/rails runner '
-  b = Book.first
-  b.update!(summary: b.summary + " xanthous")
-'
-curl -s "http://app.localhost/search?q=xanthous"   # returns the book (new summary indexed)
-```
-
-**Deleting removes the index entry and the cached value**:
-
-```sh
-docker compose -f docker-compose.full.yml exec web bin/rails runner '
-  r = Book.first.reviews.find_by(content: "zephyrx"); r.destroy!
-'
-curl -s "http://app.localhost/search?q=zephyrx"   # no results anymore
-docker compose -f docker-compose.full.yml exec redis redis-cli KEYS 'reports/*'   # invalidated again
-```
-
-### d) Stale data
-
-* **None expected.** Every mutation invalidates the cache: `Review`/`Sale` callbacks recompute `avg_score`/`number_of_sales` and re-save the book, which fires `Book#after_save` → `CacheService.delete_matched("reports/*", "books/*", "search/*")`. Editing a `Book` or `Author` directly invalidates `reports/*` (author summary). Search synchronization now goes through `SearchSyncService`: failures leave persistent recovery debt and reads use MongoDB until reconciliation succeeds (see below).
-* **Accepted / justified cases.** The per-key TTL (5–10 min) is only a safety net, never the invalidation mechanism. If Redis is unreachable at boot the app falls back to `:memory_store` (documented as bug #8 in `k8s/README.md`), and if Meilisearch is down search falls back to MongoDB regex — in both cases the app stays functional and consistent with MongoDB on the next read.
-
-The same tests run on the Kubernetes stack: `bin/k8s-up full`, port-forward `svc/web 3000:80` (service port 80) for the `curl` steps, and use `kubectl -n software-arch-team4 exec deploy/web -- bin/rails runner '<code>'` instead of `docker compose ... exec web`.
-
-## Search failure and recovery
-
-MongoDB remains the source of truth. `SearchSyncService` owns all application
-index writes; the gem's automatic indexing/removal callbacks are disabled.
-Book callbacks and `BookStatisticsRecalculator` (Review/Sale changes) delegate to
-this service using fresh persisted data. Expected Meilisearch failures are logged
-without credentials or document payloads and do not turn successful CRUD writes
-into HTTP 500. MongoDB and programming errors are not silently swallowed.
-
-`SearchSyncState` stores `dirty`, a monotonic `revision`, and an exclusive
-`lock_token`/`locked_at` in MongoDB, scoped to the configured index/server within
-the application's database. Missing state starts dirty. Writes advance revision
-and mark dirty even with `SEARCH_ENABLED=false`, without contacting Meilisearch.
-When clean, normal writes synchronously update/delete the affected document and
-verify the remote task succeeded. With previous recovery debt, a successful write
-attempts one full reconciliation: settle pending index tasks, clear all documents,
-then index the current Books in batches of 100. Every new settings/clear/index
-task must finish with `status == succeeded`; HTTP 202 or `await` alone is not proof.
-This also removes documents for Books deleted during an outage, including when
-MongoDB has no Books left.
-
-Clean publication requires the same revision and lock token. Concurrent writers
-that cannot acquire the lock do not wait: their MongoDB changes stay saved and
-dirty remains true until a later successful reconciliation. The lock also
-serializes incremental index writes with rebuilds. Recovery has a 15-second task
-budget, with SDK HTTP timeout of 2 seconds and automatic retries disabled; an
-in-flight HTTP call can extend that budget. There is no periodic recovery polling,
-startup ping/rebuild, or reconciliation triggered by a search. Task completion
-waits are bounded and occur only inside an explicit synchronization attempt.
-
-While dirty, search bypasses its result cache and uses MongoDB. Clean search cache
-keys include state identity, epoch and revision, so old/in-flight results cannot
-be reused after clean publication. A failed clean-index search marks dirty and
-falls back without rebuilding. General cache generation, purge and individual
-average-score caching are unchanged.
-
-For first activation or recovery without another write, run the manual task on
-the selected search-enabled Compose stack (no seeds required):
-
-```sh
-docker compose -f docker-compose.full.yml exec web bin/rails search:reconcile
-```
-
-`search:reindex` is an alias for that full reconciliation. `search:clear` uses the
-same coordination/task checks but deliberately leaves the state dirty. Tasks
-report `disabled` without a network call if search is off; failed/busy/changed-
-revision reconciliation exits unsuccessfully so operators must not assume clean.
-
-Locks are released in `ensure`, only by their owner. An abrupt process death can
-leave an abandoned lock; **never unlock a live owner**. After stopping/verifying
-the old owner, inspect `SearchSyncState.current` in Rails console and use its exact
-token with `bin/rails 'search:unlock[TOKEN]'`, setting
-`SEARCH_SYNC_OWNER_STOPPED=yes` in that command's environment. This guarded task
-keeps dirty and advances revision; run `search:reconcile` afterwards. There is no
-automatic expiration or lock stealing.
-
-Limits: the MongoDB document write and dirty marker are separate operations, so a
-process crash between them can escape tracking. Raw collection writes, `set`,
-`delete_all` and other callback-bypassing operations need explicit reconciliation.
-A crash during rebuilding keeps dirty and may require the manual lock procedure.
-This is not a distributed transaction. Author rename propagation and search-query
-cache-key normalization are separate outstanding issues, not fixed by this block.
-
-Regression checks use disposable MongoDB/Redis/Meilisearch services, random test
-databases/indexes and a TCP fault proxy; they do not seed or modify normal data:
-
-```sh
-docker compose -p a3-regression -f test/compose.yml run --rm tests sh /source/test/support/run-suite.sh --seed 12345
-docker compose -p a3-regression -f test/compose.yml stop
-```
-
-The real-engine test checks title/summary/reviews, relevance, pagination, HTTP
-writes during network failure, dirty-cache bypass, recovery removing an orphaned
-document, review edits/deletes, and the manual clear/reindex/reconcile tasks.
 
 ## Rancher Integration
 
