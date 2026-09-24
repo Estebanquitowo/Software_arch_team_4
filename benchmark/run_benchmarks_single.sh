@@ -6,6 +6,7 @@ docker compose -f docker-compose.full.yml up -d
 sleep 15
 
 # Endpoints and request volumes
+# Particularly, the static endpoint requires uploading an image to the web app before running the benchmark. Change the image path in the URL if you want to test with a different image.
 ENDPOINTS=(
   "static:https://app.localhost/images/books/074c88e2c7f294af.jpg"
   "aggregation:https://app.localhost/reports/top_selling_books"

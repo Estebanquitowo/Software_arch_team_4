@@ -26,17 +26,17 @@ echo "=========================================================="
   echo "Timestamp: $(date -u)"
   echo "=========================================================="
 
-  # 1. Warm-up request
+  # Warm-up request
   echo "--- Sending Warm-Up Request ---"
   curl -k -s -o /dev/null -w "Warm-up HTTP Status: %{http_code} | Total Time: %{time_total}s\n" "$URL"
   sleep 1
 
-  # 2. Pre-test container stats
+  # Pre-test container stats
   echo ""
   echo "--- Resource Baseline BEFORE Test ---"
   docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
-  # 3. Execute k6 via Docker
+  # Execute k6 via Docker
   echo ""
   echo "--- k6 Execution Output ---"
   docker run --rm -i \
@@ -45,12 +45,12 @@ echo "=========================================================="
     -e REQUESTS="$COUNT" \
     grafana/k6 run - < "$SCRIPT_DIR/load_test.js"
 
-  # 4. Post-test container stats
+  # Post-test container stats
   echo ""
   echo "--- Resource Usage AFTER/PEAK Test ---"
   docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
-  # 5. OS Thread Counts
+  # OS Thread Counts
   echo ""
   echo "--- Process Thread Counts ---"
   for c in $(docker ps --filter "name=software_arch" --format "{{.Names}}"); do
